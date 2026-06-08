@@ -1,0 +1,39 @@
+llm:
+  provider: "deepseek"
+  models:
+    simple: "deepseek-v4-flash"
+    complex: "deepseek-v4-pro"
+  api_key: "${DEEPSEEK_API_KEY}"
+
+openai:
+  api_key: "${OPENAI_API_KEY}"
+  whisper_model: "whisper-1"
+  embedding_model: "text-embedding-3-small"
+
+groq:
+  api_key: "${GROQ_API_KEY}"
+  whisper_model: "whisper-large-v3-turbo"
+
+transcription:
+  provider: "groq"  # "openai" or "groq" - Groq is faster and cheaper!
+  language: "de"  # Language code for Whisper (e.g., "de", "en", null for auto-detect)
+
+database:
+  url: "${DATABASE_URL}"
+  # For Supabase, use: postgresql://postgres:[password]@[project-ref].supabase.co:5432/postgres
+
+chunking:
+  chunk_size: 550
+  overlap: 100
+
+rag:
+  top_k: 10  # Increased from 5 to get more context
+  similarity_threshold: 0.4  # Raised from 0.3 - filter out low-quality matches
+  use_reranking: false  # Set to true to enable LLM-based relevance scoring (costs extra API calls)
+  prompt_version: "v2"  # Use improved, less restrictive prompt
+  preprocess_query: true  # LLM rewrites query for better RAG performance (translate + optimize)
+
+audio:
+  output_dir: "downloads/audio"
+  allowed_domains:
+    - "live.rbg.tum.de"

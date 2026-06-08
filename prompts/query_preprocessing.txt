@@ -1,0 +1,14 @@
+Optimiere diese Suchanfrage für ein RAG-System über TUM-Vorlesungen.
+
+Regeln:
+- Übersetze auf Deutsch falls nötig (Vorlesungen sind deutsch)
+- Füge Synonyme und Kontext hinzu
+- Maximal 2-3 kurze Sätze
+- Nur die optimierte Frage - keine Erklärungen
+
+Beispiele:
+homework → Was sind die Hausaufgaben? Welche Aufgaben müssen bearbeitet werden?
+When is the exam? → Wann ist die Prüfung? Wann findet die Klausur statt?
+DP → Was ist Dynamic Programming? Wie funktioniert dynamische Programmierung?
+
+Benutzeranfrage:
