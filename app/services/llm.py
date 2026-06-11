@@ -86,8 +86,9 @@ class LLMService:
         temperature: float = 0.3,
         max_tokens: int = 4096,
         log_id: Optional[int] = None,
-        json_mode: bool = False
-    ) -> str:
+        json_mode: bool = False,
+        return_finish_reason: bool = False
+    ):
         """
         Generate completion using DeepSeek API.
 
@@ -97,9 +98,11 @@ class LLMService:
             model: "simple" (flash) or "complex" (pro)
             temperature: Sampling temperature (0-1)
             max_tokens: Max tokens to generate
+            return_finish_reason: If True, return (text, finish_reason) tuple.
+                finish_reason == "length" means the output was truncated by max_tokens.
 
         Returns:
-            Generated text
+            Generated text, or (text, finish_reason) if return_finish_reason=True
 
         Raises:
             LLMError: If completion fails
@@ -150,15 +153,27 @@ class LLMService:
                 response.raise_for_status()
                 result = response.json()
 
-                completion = result["choices"][0]["message"]["content"]
+                choice = result["choices"][0]
+                completion = choice["message"]["content"]
+                finish_reason = choice.get("finish_reason")
                 duration = time.time() - start_time
 
-                logger.debug(f"LLM completion: {len(completion)} chars in {duration:.2f}s")
+                logger.debug(f"LLM completion: {len(completion)} chars in {duration:.2f}s (finish_reason={finish_reason})")
+
+                # Truncation is the #1 cause of unparseable JSON downstream.
+                # Surface it loudly instead of letting json.loads fail cryptically later.
+                if finish_reason == "length":
+                    logger.warning(
+                        f"LLM output TRUNCATED (finish_reason=length): hit max_tokens={max_tokens} "
+                        f"on model={model_name}. Output is likely incomplete/invalid JSON."
+                    )
 
                 # Log request/response if log_id provided
                 if log_id is not None:
                     self._log_request(log_id, prompt, completion, duration)
 
+                if return_finish_reason:
+                    return completion, finish_reason
                 return completion
 
         except httpx.HTTPStatusError as e:

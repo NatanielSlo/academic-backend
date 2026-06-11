@@ -125,8 +125,16 @@ LECTURE_ID="550e8400-e29b-41d4-a716-446655440000"  # replace with actual ID
 
 ### 5b. Start generation
 
+Notes and quiz are generated via separate endpoints. Each will generate the
+shared outline first if it doesn't already exist. They share a single status
+row, so run one at a time.
+
 ```bash
-curl -X POST "http://localhost:8000/api/content/lectures/$LECTURE_ID/generate" \
+# Generate detailed notes (no body required)
+curl -X POST "http://localhost:8000/api/content/lectures/$LECTURE_ID/generate-notes"
+
+# Generate the comprehensive quiz
+curl -X POST "http://localhost:8000/api/content/lectures/$LECTURE_ID/generate-quiz" \
   -H "Content-Type: application/json" \
   -d '{"num_quiz_questions": 10}'
 ```

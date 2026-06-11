@@ -1,0 +1,169 @@
+{
+  "quiz_metadata": {
+    "total_questions": 8,
+    "topics_covered": [
+      "Abschließende Fragen und informelle Diskussion nach der Vorlesung",
+      "Begrüßung und organisatorische Einführung zur Vorlesung (Prof. Westermann)",
+      "Inhaltliche Einführung, Bedeutung des Praktikums, Konzepte und Demonstration (Prof. Westermann)",
+      "Organisation und Ablauf des Praktikums Grundlagen der Programmierung (PGDP) – Jan Wagner"
+    ],
+    "difficulty_distribution": {
+      "basic": 4,
+      "intermediate": 4,
+      "advanced": 0
+    }
+  },
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Begrüßung und organisatorische Einführung zur Vorlesung (Prof. Westermann)",
+      "question_text": "Welche Aussage beschreibt das Verhältnis von Vorlesung (IN0001) und Praktikum (IN0002) am besten?",
+      "options": [
+        {
+          "label": "A",
+          "text": "Das Praktikum IN0002 baut auf der Vorlesung IN0001 auf und kann nur zusammen mit dieser belegt werden."
+        },
+        {
+          "label": "B",
+          "text": "IN0001 und IN0002 sind eigenständige Module mit getrennten Prüfungsleistungen."
+        },
+        {
+          "label": "C",
+          "text": "Die Vorlesung IN0001 ist ein Teilmodul des Praktikums IN0002."
+        },
+        {
+          "label": "D",
+          "text": "Beide teilen sich eine gemeinsame Abschlussprüfung."
+        }
+      ],
+      "correct_answer": "B",
+      "explanation": "Prof. Westermann betont, dass es sich um 'zwei eigenständige Module mit separaten Prüfungsleistungen' handelt. Sie können unabhängig voneinander belegt werden, und es gibt keine gemeinsame Prüfung oder Abhängigkeit.",
+      "source_reference": "Modulstruktur: IN0001 und IN0002 sind eigenständig",
+      "question_id": 1
+    },
+    {
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Begrüßung und organisatorische Einführung zur Vorlesung (Prof. Westermann)",
+      "question_text": "Laut Prof. Westermann sollen Fragen im Moodle-Forum möglichst auf Englisch gestellt werden, um den englischsprachigen Betreuer zu entlasten.",
+      "correct_answer": "True",
+      "explanation": "In der Einführung wird klargestellt, dass Moodle-Fragen auf Englisch formuliert werden sollen, um dem englischsprachigen Tutor die Arbeit zu erleichtern. Dies ist eine direkte organisatorische Anweisung aus der Sprachregelung.",
+      "source_reference": "Sprachregelung",
+      "question_id": 2
+    },
+    {
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Organisation und Ablauf des Praktikums Grundlagen der Programmierung (PGDP) – Jan Wagner",
+      "question_text": "Which of the following correctly describes a requirement to pass the PGDP practical course (IN0002)?",
+      "options": [
+        {
+          "label": "A",
+          "text": "Achieving at least 60% of total points across all homework sheets, regardless of individual sheet performance."
+        },
+        {
+          "label": "B",
+          "text": "Achieving between 50% and 60% of the total 250 points, plus at least 40% on at least 9 out of 12 sheets (2–13)."
+        },
+        {
+          "label": "C",
+          "text": "Submitting all 13 homework sheets with no plagiarism violations."
+        },
+        {
+          "label": "D",
+          "text": "Scoring full points on the first homework sheet and achieving at least 50% on the remaining ones."
+        }
+      ],
+      "correct_answer": "B",
+      "explanation": "The course has a combined passing requirement: a total score between 50% and 60% of the 250 maximum points, and additionally, at least 9 of the 12 main sheets (sheets 2–13) must be passed with at least 40% of that sheet's points. Option A ignores the per-sheet rule; Option C misses the point thresholds; Option D invents an arbitrary rule about the first sheet.",
+      "question_id": 3
+    },
+    {
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Organisation und Ablauf des Praktikums Grundlagen der Programmierung (PGDP) – Jan Wagner",
+      "question_text": "Students must initially attend their assigned Central Exercise (Zentralübung) slot based on their last name in the first week, before the matching process takes effect.",
+      "correct_answer": "True",
+      "explanation": "In the first week, before the matching tool assigns permanent slots, students are distributed according to the first letters of their last name to ensure a smooth start. This temporary assignment is mentioned explicitly in the organisational talk.",
+      "question_id": 4
+    },
+    {
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Inhaltliche Einführung, Bedeutung des Praktikums, Konzepte und Demonstration (Prof. Westermann)",
+      "question_text": "In der Vorlesung wurde der Unterschied zwischen der Denkweise eines Mathematikers und eines Informatikers erläutert. Welche Aussage trifft am besten zu?",
+      "options": [
+        {
+          "label": "A",
+          "text": "Der Informatiker strebt eine Lösung an, die mathematisch elegant ist, auch wenn sie ineffizient ist."
+        },
+        {
+          "label": "B",
+          "text": "Der Informatiker sucht eine effizient berechenbare Lösung und berücksichtigt dabei die Fähigkeiten des Rechners."
+        },
+        {
+          "label": "C",
+          "text": "Der Mathematiker und der Informatiker gehen identisch vor, nur mit unterschiedlichen Notationen."
+        },
+        {
+          "label": "D",
+          "text": "Der Informatiker verlässt sich auf vorgefertigte Bibliotheken, während der Mathematiker alles neu entwickelt."
+        }
+      ],
+      "correct_answer": "B",
+      "explanation": "Die Vorlesung betonte, dass der Informatiker nicht nur irgendeine Lösung, sondern eine effizient berechenbare Lösung anstrebt, die die Beschränkungen des Rechners und der Programmiersprache berücksichtigt. Im Gegensatz dazu reicht dem Mathematiker oft eine (theoretische) Lösbarkeit ohne Effizienzbetrachtung.",
+      "source_reference": "Denkweise der Informatik",
+      "question_id": 5
+    },
+    {
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Inhaltliche Einführung, Bedeutung des Praktikums, Konzepte und Demonstration (Prof. Westermann)",
+      "question_text": "Prof. Westermann betonte, dass die aktive Teilnahme am Praktikum die beste Vorbereitung auf die Klausur ist.",
+      "correct_answer": "True",
+      "explanation": "Prof. Westermann sagte wörtlich: 'die beste Vorbereitung für diese Prüfung ist natürlich die aktive Teilnahme am Praktikum.' Er warnte davor, dass alleiniges Lesen eines Buches nicht ausreicht, um Programmieren zu lernen.",
+      "question_id": 6
+    },
+    {
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Abschließende Fragen und informelle Diskussion nach der Vorlesung",
+      "question_text": "Ein Student hat eine Überschneidung zwischen der Haupt-Zentralübung (ZÜ) und einer anderen Vorlesung. Was ist die empfohlene Lösung?",
+      "options": [
+        {
+          "label": "A",
+          "text": "Die ZÜ einfach ausfallen lassen und nur das Skript lesen."
+        },
+        {
+          "label": "B",
+          "text": "Auf die gestreamte und aufgezeichnete ZÜ ausweichen."
+        },
+        {
+          "label": "C",
+          "text": "Den Dozenten bitten, die ZÜ zu verschieben."
+        },
+        {
+          "label": "D",
+          "text": "Die andere Vorlesung ausfallen lassen."
+        }
+      ],
+      "correct_answer": "B",
+      "explanation": "Laut der Diskussion werden die Haupt-ZÜs gestreamt und aufgezeichnet, sodass Studierende bei Terminkonflikten auf die Aufzeichnung zurückgreifen können. Option A ist nicht ratsam, da das Skript möglicherweise nicht alle Inhalte der Übung abdeckt. Option C ist unrealistisch, da der Dozent nicht individuelle Verschiebungen vornehmen wird. Option D würde dazu führen, dass man andere wichtige Inhalte verpasst.",
+      "source_reference": "Umgang mit Überlappungen der ZÜ-Termine",
+      "question_id": 7
+    },
+    {
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Abschließende Fragen und informelle Diskussion nach der Vorlesung",
+      "question_text": "Die Prüfung kann vollständig auf Englisch abgelegt werden, sowohl die Fragen als auch die Antworten sind auf Englisch möglich.",
+      "correct_answer": "False",
+      "explanation": "Gemäß der Diskussion können die Antworten in jedem Fall auf Englisch geschrieben werden. Ob jedoch auch die Prüfungsfragen auf Englisch gestellt werden dürfen, ist noch nicht endgültig geklärt. Daher ist die Aussage, dass beides sicher möglich ist, falsch.",
+      "question_id": 8
+    }
+  ],
+  "lecture_id": "8c31dfcd-1ba1-4069-baa0-88218696ed91",
+  "generated_at": "2026-06-11T12:26:44.158200",
+  "pass": "quiz_generation"
+}

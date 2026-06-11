@@ -10,3 +10,4 @@ openai>=1.0.0
 groq>=0.4.0
 psycopg2-binary>=2.9.9
 tiktoken>=0.8.0
+json-repair>=0.30.0  # optional: smarter recovery of truncated LLM JSON (code falls back to a built-in repair if absent)

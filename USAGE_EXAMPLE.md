@@ -240,18 +240,8 @@ from typing import Optional
 
 API_BASE = "http://localhost:8000"
 
-def generate_and_wait(lecture_id: str, num_questions: int = 20) -> dict:
-    """Generate materials and wait for completion."""
-    
-    # Start generation
-    print(f"Starting generation for lecture {lecture_id}...")
-    response = requests.post(
-        f"{API_BASE}/api/content/lectures/{lecture_id}/generate",
-        json={"num_quiz_questions": num_questions}
-    )
-    response.raise_for_status()
-    
-    # Poll status
+def _wait_until_done(lecture_id: str):
+    """Poll the shared status row until the current job finishes."""
     while True:
         status_response = requests.get(
             f"{API_BASE}/api/content/lectures/{lecture_id}/generation-status"
@@ -267,31 +257,45 @@ def generate_and_wait(lecture_id: str, num_questions: int = 20) -> dict:
             raise Exception(f"Generation failed: {status.get('error_message')}")
         
         time.sleep(5)
-    
-    # Fetch all materials
-    print("Fetching materials...")
-    materials = requests.get(
-        f"{API_BASE}/api/content/lectures/{lecture_id}/all-materials"
+
+
+def generate_notes(lecture_id: str) -> str:
+    """Generate notes (and the outline if needed), then return the markdown."""
+    print(f"Generating notes for {lecture_id}...")
+    requests.post(f"{API_BASE}/api/content/lectures/{lecture_id}/generate-notes").raise_for_status()
+    _wait_until_done(lecture_id)
+    return requests.get(
+        f"{API_BASE}/api/content/lectures/{lecture_id}/notes"
+    ).json()["notes_markdown"]
+
+
+def generate_quiz(lecture_id: str, num_questions: int = 20) -> dict:
+    """Generate the quiz (and the outline if needed), then return the quiz data."""
+    print(f"Generating quiz for {lecture_id}...")
+    requests.post(
+        f"{API_BASE}/api/content/lectures/{lecture_id}/generate-quiz",
+        json={"num_quiz_questions": num_questions},
+    ).raise_for_status()
+    _wait_until_done(lecture_id)
+    return requests.get(
+        f"{API_BASE}/api/content/lectures/{lecture_id}/comprehensive-quiz"
     ).json()
-    
-    return materials
+
 
 # Usage
 if __name__ == "__main__":
     lecture_id = "550e8400-e29b-41d4-a716-446655440000"
-    materials = generate_and_wait(lecture_id, num_questions=15)
-    
-    # Save notes
+
+    # Notes and quiz are independent. Run whichever you need (one at a time —
+    # they share a single status row).
+    notes_markdown = generate_notes(lecture_id)
     with open(f"notes_{lecture_id}.md", "w", encoding="utf-8") as f:
-        f.write(materials["notes_markdown"])
-    
-    # Save quiz
+        f.write(notes_markdown)
+
+    quiz = generate_quiz(lecture_id, num_questions=15)
     with open(f"quiz_{lecture_id}.json", "w", encoding="utf-8") as f:
         import json
-        json.dump(materials["quiz"], f, indent=2)
-    
-    print(f"Coverage: {materials['coverage_report']['overall_assessment']['coverage_percent']}%")
-    print(f"Quality: {materials['coverage_report']['overall_assessment']['quality_score']}")
+        json.dump(quiz, f, indent=2)
 ```
 
 ## Common Workflows

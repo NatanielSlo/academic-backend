@@ -74,133 +74,149 @@ def _update_generation_status(
         db._put_conn(conn)
 
 
-def _background_generate_materials(lecture_id: UUID, num_questions: int):
-    """Background task to generate all materials."""
+def _save_artifact(sql: str, params: tuple):
+    """Run a single INSERT/UPSERT and commit it on its own connection."""
+    conn = db._get_conn()
     try:
-        _update_generation_status(lecture_id, "generating_outline", 10, "Extracting structured outline")
+        cursor = conn.cursor()
+        cursor.execute(sql, params)
+        conn.commit()
+        cursor.close()
+    finally:
+        db._put_conn(conn)
 
-        generator = ContentGenerator()
 
-        # Run full three-pass pipeline
-        result = generator.generate_all(str(lecture_id), num_quiz_questions=num_questions, show_progress=True)
+def _load_outline(lecture_id: str):
+    """Return the stored outline for a lecture, or None if it hasn't been generated yet."""
+    conn = db._get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT outline FROM lecture_outlines WHERE lecture_id = %s", (lecture_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if not row:
+            return None
+        return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+    finally:
+        db._put_conn(conn)
 
-        # Store results in database
-        _update_generation_status(lecture_id, "generating_outline", 30, "Saving outline")
 
-        conn = db._get_conn()
-        try:
-            cursor = conn.cursor()
+def _ensure_outline(generator: ContentGenerator, lecture_id: UUID) -> dict:
+    """
+    Notes and quiz both depend on the outline (Pass 1). Reuse the stored outline if
+    present; otherwise generate and persist it once so the second artifact is cheap.
+    """
+    lid = str(lecture_id)
+    existing = _load_outline(lid)
+    if existing:
+        return existing
 
-            # Store outline
-            cursor.execute("""
-                INSERT INTO lecture_outlines (lecture_id, outline, generated_at)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (lecture_id) DO UPDATE SET
-                    outline = EXCLUDED.outline,
-                    generated_at = EXCLUDED.generated_at
-            """, (str(lecture_id), Json(result["outline"]), datetime.now()))
+    _update_generation_status(lecture_id, "generating_outline", 20, "Extracting structured outline")
+    transcript = generator.get_transcript_text(lid)
+    outline = generator.pass1_extract_outline(lid, transcript)
+    _save_artifact(
+        """
+        INSERT INTO lecture_outlines (lecture_id, outline, generated_at)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (lecture_id) DO UPDATE SET
+            outline = EXCLUDED.outline, generated_at = EXCLUDED.generated_at
+        """,
+        (lid, Json(outline), datetime.now()),
+    )
+    return outline
 
-            cursor.close()
-        finally:
-            db._put_conn(conn)
 
-        # Store notes
-        _update_generation_status(lecture_id, "generating_notes", 50, "Saving detailed notes")
+def _background_generate_notes(lecture_id: UUID):
+    """Background task: ensure outline exists, then generate and persist notes."""
+    lid = str(lecture_id)
+    generator = ContentGenerator()
+    try:
+        outline = _ensure_outline(generator, lecture_id)
 
-        conn = db._get_conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO lecture_notes (lecture_id, notes_markdown, generated_at)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (lecture_id) DO UPDATE SET
-                    notes_markdown = EXCLUDED.notes_markdown,
-                    generated_at = EXCLUDED.generated_at
-            """, (str(lecture_id), result["notes"], datetime.now()))
+        _update_generation_status(lecture_id, "generating_notes", 60, "Generating detailed notes")
+        notes = generator.pass2_generate_notes(lid, outline)
+        _save_artifact(
+            """
+            INSERT INTO lecture_notes (lecture_id, notes_markdown, generated_at)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (lecture_id) DO UPDATE SET
+                notes_markdown = EXCLUDED.notes_markdown, generated_at = EXCLUDED.generated_at
+            """,
+            (lid, notes, datetime.now()),
+        )
 
-            cursor.close()
-        finally:
-            db._put_conn(conn)
-
-        # Store quiz
-        _update_generation_status(lecture_id, "generating_quiz", 70, "Saving quiz")
-
-        conn = db._get_conn()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO comprehensive_quizzes (lecture_id, quiz_data, num_questions, generated_at)
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (lecture_id) DO UPDATE SET
-                    quiz_data = EXCLUDED.quiz_data,
-                    num_questions = EXCLUDED.num_questions,
-                    generated_at = EXCLUDED.generated_at
-            """, (str(lecture_id), Json(result["quiz"]), len(result["quiz"]["questions"]), datetime.now()))
-
-            cursor.close()
-        finally:
-            db._put_conn(conn)
-
-        # Store coverage report
-        _update_generation_status(lecture_id, "verifying", 90, "Saving coverage report")
-
-        conn = db._get_conn()
-        try:
-            cursor = conn.cursor()
-            coverage = result["coverage_report"]
-            cursor.execute("""
-                INSERT INTO coverage_reports (lecture_id, report, coverage_percent, quality_score, generated_at)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (lecture_id) DO UPDATE SET
-                    report = EXCLUDED.report,
-                    coverage_percent = EXCLUDED.coverage_percent,
-                    quality_score = EXCLUDED.quality_score,
-                    generated_at = EXCLUDED.generated_at
-            """, (
-                str(lecture_id),
-                Json(coverage),
-                coverage["overall_assessment"]["coverage_percent"],
-                coverage["overall_assessment"]["quality_score"],
-                datetime.now()
-            ))
-
-            conn.commit()
-            cursor.close()
-        finally:
-            db._put_conn(conn)
-
-        _update_generation_status(lecture_id, "completed", 100, "All materials generated")
-        logger.info(f"Successfully generated all materials for lecture {lecture_id}")
-
+        _update_generation_status(lecture_id, "completed", 100, "Notes generated")
+        logger.info(f"Successfully generated notes for lecture {lecture_id}")
     except Exception as e:
-        logger.error(f"Background content generation failed for {lecture_id}: {e}")
+        logger.error(f"Background notes generation failed for {lecture_id}: {e}")
         _update_generation_status(lecture_id, "failed", 0, None, str(e))
 
 
-@router.post("/lectures/{lecture_id}/generate", response_model=MaterialsStatusResponse)
-async def generate_comprehensive_materials(
+def _background_generate_quiz(lecture_id: UUID, num_questions: int):
+    """Background task: ensure outline exists, then generate and persist the quiz."""
+    lid = str(lecture_id)
+    generator = ContentGenerator()
+    try:
+        outline = _ensure_outline(generator, lecture_id)
+
+        _update_generation_status(lecture_id, "generating_quiz", 60, "Generating quiz")
+        quiz = generator.pass2_generate_quiz(lid, outline, num_questions=num_questions)
+        _save_artifact(
+            """
+            INSERT INTO comprehensive_quizzes (lecture_id, quiz_data, num_questions, generated_at)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (lecture_id) DO UPDATE SET
+                quiz_data = EXCLUDED.quiz_data, num_questions = EXCLUDED.num_questions,
+                generated_at = EXCLUDED.generated_at
+            """,
+            (lid, Json(quiz), len(quiz.get("questions", [])), datetime.now()),
+        )
+
+        _update_generation_status(lecture_id, "completed", 100, "Quiz generated")
+        logger.info(f"Successfully generated quiz for lecture {lecture_id}")
+    except Exception as e:
+        logger.error(f"Background quiz generation failed for {lecture_id}: {e}")
+        _update_generation_status(lecture_id, "failed", 0, None, str(e))
+
+
+@router.post("/lectures/{lecture_id}/generate-notes", response_model=MaterialsStatusResponse)
+async def generate_notes(
     lecture_id: UUID,
-    request: ContentGenerationRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
 ):
     """
-    Start generation of comprehensive materials (outline, notes, quiz) for a lecture.
-    This runs in the background. Poll /status to check progress.
+    Start generation of detailed notes for a lecture (generates the outline first if
+    it doesn't exist yet). Runs in the background; poll /generation-status for progress.
     """
-    # Check lecture exists and is ready
     _get_lecture_or_404(lecture_id)
-
-    # Initialize status
-    _update_generation_status(lecture_id, "not_started", 0)
-
-    # Start background task
-    background_tasks.add_task(_background_generate_materials, lecture_id, request.num_quiz_questions)
-
+    _update_generation_status(lecture_id, "not_started", 0, "Queued: notes")
+    background_tasks.add_task(_background_generate_notes, lecture_id)
     return MaterialsStatusResponse(
         lecture_id=lecture_id,
         status="not_started",
         progress_percent=0,
-        current_step="Queued for processing"
+        current_step="Queued for processing (notes)",
+    )
+
+
+@router.post("/lectures/{lecture_id}/generate-quiz", response_model=MaterialsStatusResponse)
+async def generate_quiz(
+    lecture_id: UUID,
+    request: ContentGenerationRequest,
+    background_tasks: BackgroundTasks,
+):
+    """
+    Start generation of the comprehensive quiz for a lecture (generates the outline
+    first if it doesn't exist yet). Runs in the background; poll /generation-status.
+    """
+    _get_lecture_or_404(lecture_id)
+    _update_generation_status(lecture_id, "not_started", 0, "Queued: quiz")
+    background_tasks.add_task(_background_generate_quiz, lecture_id, request.num_quiz_questions)
+    return MaterialsStatusResponse(
+        lecture_id=lecture_id,
+        status="not_started",
+        progress_percent=0,
+        current_step="Queued for processing (quiz)",
     )
 
 

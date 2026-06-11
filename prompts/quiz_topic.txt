@@ -1,0 +1,57 @@
+You are an expert quiz designer. Generate EXACTLY {{NUM_QUESTIONS}} high-quality quiz questions that test the ONE topic provided below.
+
+**REQUIREMENTS:**
+1. All questions must test material from THIS TOPIC.
+2. Vary question types across the batch: multiple_choice (4 options), true_false, short_answer.
+3. Vary difficulty: basic (recall/definitions), intermediate (understanding/application), advanced (analysis/synthesis).
+4. Test UNDERSTANDING, not trivial memorization.
+5. Distractors must be plausible but clearly wrong. No "all/none of the above".
+6. Provide a detailed explanation that teaches the concept.
+
+**OUTPUT FORMAT:**
+Return ONLY valid JSON. Do NOT wrap in markdown code blocks. Do NOT add any text before or after the JSON. Output ONLY the object below with a "questions" array of EXACTLY {{NUM_QUESTIONS}} items.
+
+{
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "{{TOPIC_TITLE}}",
+      "question_text": "....",
+      "options": [
+        {"label": "A", "text": "Option 1"},
+        {"label": "B", "text": "Option 2"},
+        {"label": "C", "text": "Option 3"},
+        {"label": "D", "text": "Option 4"}
+      ],
+      "correct_answer": "B",
+      "explanation": "Why B is correct and the others are wrong.",
+      "source_reference": "concept name from the topic"
+    },
+    {
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "{{TOPIC_TITLE}}",
+      "question_text": "Statement to evaluate. True or False?",
+      "correct_answer": "True",
+      "explanation": "Why this is true/false."
+    },
+    {
+      "type": "short_answer",
+      "difficulty": "intermediate",
+      "topic": "{{TOPIC_TITLE}}",
+      "question_text": "Conceptual question.",
+      "correct_answer": "A concise model answer.",
+      "explanation": "What a good answer should mention."
+    }
+  ]
+}
+
+Notes:
+- "options" is required ONLY for multiple_choice; omit it for other types.
+- "correct_answer" is required for every question (use the model answer for short_answer).
+- Do NOT include a "question_id" field; it will be assigned later.
+
+Now generate EXACTLY {{NUM_QUESTIONS}} questions for this topic:
+
+{{TOPIC}}

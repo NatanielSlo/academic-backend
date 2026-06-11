@@ -1,0 +1,126 @@
+{
+  "coverage_summary": {
+    "outline_topics": 4,
+    "outline_concepts": 27,
+    "notes_topics_covered": 4,
+    "quiz_topics_covered": 4,
+    "coverage_percent": 100.0
+  },
+  "notes_coverage": {
+    "topics_covered": [
+      "Welcome and General Introduction",
+      "Organizational Details for the Lecture (IN0001)",
+      "Organizational Details for the Practical Course (PGDP, IN0002)",
+      "Content Overview and Motivation"
+    ],
+    "topics_missing": [],
+    "concepts_missing": [],
+    "coverage_percent": 100.0
+  },
+  "quiz_coverage": {
+    "topics_with_questions": [
+      "Welcome and General Introduction",
+      "Organizational Details for the Lecture (IN0001)",
+      "Organizational Details for the Practical Course (PGDP, IN0002)",
+      "Content Overview and Motivation"
+    ],
+    "topics_without_questions": [],
+    "question_distribution": {
+      "Welcome and General Introduction": 5,
+      "Organizational Details for the Lecture (IN0001)": 5,
+      "Organizational Details for the Practical Course (PGDP, IN0002)": 5,
+      "Content Overview and Motivation": 5
+    },
+    "coverage_percent": 55.6
+  },
+  "gaps": [
+    {
+      "type": "no_quiz_questions",
+      "severity": "high",
+      "item": "Introduction of Teaching Team",
+      "recommendation": "Add a basic question about who the instructors are."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "high",
+      "item": "Semester Schedule",
+      "recommendation": "Add a question about the semester length and break."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "Zentralübung Format",
+      "recommendation": "Add a question about the structure of central exercises."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "Zentralübung Content and Method",
+      "recommendation": "Add a question about the teaching method (mixture of lecture and self-work)."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "First Week Exception",
+      "recommendation": "Add a question about the special schedule in week 1."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "high",
+      "item": "Weekly Homework Blätter",
+      "recommendation": "Add a question about homework publication and deadlines."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "Automatic and Manual Correction",
+      "recommendation": "Add a question about the two correction modes."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "Matching Deadlines and Procedure",
+      "recommendation": "Add a question about matching deadlines and process."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "low",
+      "item": "Exceptions: Bioinformatiker and Frühstudierende",
+      "recommendation": "Add a question about special groups."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "high",
+      "item": "Zulip as Primary Communication Channel",
+      "recommendation": "Add a question about the main communication platform."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "low",
+      "item": "Tool Overview",
+      "recommendation": "Add a question about the five tools used."
+    },
+    {
+      "type": "no_quiz_questions",
+      "severity": "medium",
+      "item": "To-Do in der ersten Woche",
+      "recommendation": "Add a question about first-week action items."
+    }
+  ],
+  "quality_issues": [
+    {
+      "issue": "Quiz lacks questions on many important administrative and organizational details from the practical course section.",
+      "location": "quiz",
+      "suggestion": "Add questions covering missing concepts such as teaching team, schedule, Zentralübung format, homework deadlines, correction modes, matching deadlines, communication channels, and first-week tasks."
+    }
+  ],
+  "overall_assessment": {
+    "coverage_percent": 100.0,
+    "quality_score": "fair",
+    "ready_for_student_use": false,
+    "summary": "The notes comprehensively cover all outline concepts (100%). However, the quiz only covers 55.6% of the concepts, missing many critical organizational details from the practical course. While students can learn from the notes, they cannot effectively self-assess their understanding of several key administrative procedures. The quiz needs significant expansion to achieve comprehensive coverage."
+  },
+  "lecture_id": "8c31dfcd-1ba1-4069-baa0-88218696ed91",
+  "generated_at": "2026-06-11T12:42:06.978283",
+  "pass": "coverage_verification"
+}
