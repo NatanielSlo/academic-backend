@@ -1,0 +1,45 @@
+```json
+{
+  "quiz_metadata": {
+    "total_questions": 10,
+    "topics_covered": [
+      "Organisatorisches zur Vorlesung IN0001 (Sprachregelung, Streaming)",
+      "Modulstruktur IN0001/IN0002",
+      "Punktesystem und Bestehensregelung im Praktikum",
+      "Korrekturmodi und Complaint-Prozess",
+      "Plagiatsprüfung und Nutzung von Internetquellen",
+      "Denkweise der Informatik und Effizienz",
+      "Matching-Verfahren und Prüfungsanmeldung",
+      "Streaming der Zentralübungen",
+      "Public- und Hidden-Tests in Artemis",
+      "Demonstration 3D-Spiel und Konzepte"
+    ],
+    "difficulty_distribution": {
+      "basic": 3,
+      "intermediate": 5,
+      "advanced": 2
+    }
+  },
+  "questions": [
+    {
+      "question_id": 1,
+      "type": "multiple_choice",
+      "difficulty": "basic",
+      "topic": "Sprachregelung und Kommunikation",
+      "question_text": "Welche Aussage zur Sprachregelung der Vorlesung IN0001 und ihrer Prüfung trifft gemäß der ersten Sitzung zu?",
+      "options": [
+        {
+          "label": "A",
+          "text": "Die Vorlesung und die Prüfung werden vollständig auf Englisch durchgeführt, um internationale Studierende zu berücksichtigen."
+        },
+        {
+          "label": "B",
+          "text": "Die Vorlesung ist auf Deutsch, Fragen dürfen auf Deutsch oder Englisch gestellt werden, Java-Code ist auf Englisch möglich; die Prüfungssprache wird noch bekannt gegeben."
+        },
+        {
+          "label": "C",
+          "text": "Die Vorlesung findet auf Deutsch statt, aber alle schriftlichen Materialien und Prüfungsfragen sind ausnahmslos auf Englisch."
+        },
+        {
+          "label": "D",
+          "text": "Fragen müssen zwingend auf

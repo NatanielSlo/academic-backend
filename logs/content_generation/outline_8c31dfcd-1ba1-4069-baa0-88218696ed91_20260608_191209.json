@@ -1,0 +1,530 @@
+{
+  "lecture_metadata": {
+    "subject": "Einführung in die Informatik (IN0001) / Praktikum Grundlagen der Programmierung (PGDP, IN0002)",
+    "main_topics": [
+      "Organisatorisches zur Vorlesung IN0001",
+      "Details zum Praktikum PGDP (IN0002)",
+      "Zentralübungen und Matching-Verfahren",
+      "Hausaufgaben, Bewertung, Plagiate und Beschwerden",
+      "Prüfungsanmeldung über das Matching",
+      "Kommunikationswege und verwendete Tools",
+      "Inhaltliche Einführung in die Informatik",
+      "Warum Java?",
+      "Grundkonzepte: Algorithmus, Effizienz, Datenstrukturen",
+      "Live-Demonstration: Interaktives 3D-Spiel und GPU-Programmierung"
+    ],
+    "duration_covered": "ca. 90 Minuten (geschätzt)",
+    "language": "Deutsch (mit englischen Anteilen)",
+    "timestamps_note": "Zeitstempel sind synthetisch und dienen nur der Strukturierung, da das Original-Transkript keine Zeitmarken enthält."
+  },
+  "topics": [
+    {
+      "title": "Begrüßung und organisatorische Einführung zur Vorlesung (Prof. Westermann)",
+      "timestamp_start": "00:00:00",
+      "timestamp_end": "00:15:00",
+      "description": "Prof. Westermann begrüßt die Studierenden, stellt sich vor und gibt einen Überblick über die organisatorischen Rahmenbedingungen der Vorlesung 'Einführung in die Informatik' (IN0001) und deren Abgrenzung zum Praktikum (IN0002).",
+      "concepts": [
+        {
+          "name": "Vorstellung des Dozenten",
+          "type": "definition",
+          "description": "Prof. Rüdiger Westermann ist Leiter des Lehrstuhls für Computergrafik und Visualisierung.",
+          "source_quote": "mein Name ist Westermann, Rüdiger Westermann. Ich bin Leiter des Lehrstuhls für Computergrafik und Visualisierung.",
+          "timestamp": "00:00:30"
+        },
+        {
+          "name": "Modulstruktur: IN0001 und IN0002 sind eigenständig",
+          "type": "definition",
+          "description": "Die Vorlesung (IN0001) und das Praktikum (IN0002) sind zwei unabhängige Module mit separaten Prüfungsleistungen. Beide können einzeln oder zusammen belegt werden.",
+          "source_quote": "Einführung in die Informatik 00IN0001 und ... das Praktikum in 002 ist ein eigenständiges Modul ... zwei eigenständige Module mit separaten Prüfungsleistungen.",
+          "timestamp": "00:01:10"
+        },
+        {
+          "name": "Streaming der Vorlesung",
+          "type": "definition",
+          "description": "Die Vorlesung wird live in zwei weitere Hörsäle gestreamt (Friedrich-von-Tiersch-Hörsaal, Hörsaal 1 Interim) und über RGB Live aufgezeichnet. Studierende können die Aufnahmen später abrufen.",
+          "source_quote": "Wir streamen alles, was hier gemacht wird ... über RGB Live und die Streams werden gespeichert und können von Ihnen dann auch zu beliebigen anderen Zeiten abgerufen werden.",
+          "timestamp": "00:03:00"
+        },
+        {
+          "name": "Sprachregelung",
+          "type": "definition",
+          "description": "Die Vorlesung wird auf Deutsch gehalten. Fragen können auf Deutsch oder Englisch gestellt werden. Moodle-Fragen bitte auf Englisch, um den englischsprachigen Betreuer zu entlasten. Prüfungssprache wird noch geklärt.",
+          "source_quote": "wie Sie hören, ich doziere auf Deutsch ... Fragen hier können Sie auf Deutsch oder auf Englisch stellen. ... in der Klausur werden wir noch ganz dediziert mitteilen, wie sie sich dort sprachlich verhalten müssen.",
+          "timestamp": "00:05:00"
+        },
+        {
+          "name": "Bereitstellung der Folien",
+          "type": "definition",
+          "description": "Die Vorlesungsfolien werden etwa 2-3 Tage vor dem jeweiligen Termin auf Moodle zur Verfügung gestellt.",
+          "source_quote": "immer in der Woche vor der stattfindenden Vorlesung dann. Also so zwei bis drei Tage Minimum.",
+          "timestamp": "00:07:30"
+        }
+      ],
+      "key_terms": [
+        "IN0001",
+        "IN0002",
+        "RGB Live",
+        "Moodle",
+        "Streaming",
+        "Zentralübungen"
+      ],
+      "formulas": [],
+      "qa_pairs": [
+        {
+          "question": "Werden die Prüfungsfragen auf Englisch gestellt?",
+          "answer": "Das ist noch nicht abschließend geklärt. Antworten können Sie auf jeden Fall auf Englisch geben. Java-Code darf auf Englisch sein. Ich erkundige mich und teile es mit.",
+          "timestamp": "00:06:00"
+        },
+        {
+          "question": "Ab wann sind die Folien verfügbar?",
+          "answer": "2-3 Tage vor dem Vorlesungstermin.",
+          "timestamp": "00:08:00"
+        },
+        {
+          "question": "Sieht man die Folien im Stream?",
+          "answer": "Es gab ein technisches Problem, an dem gearbeitet wurde; der Stream funktionierte dann einwandfrei.",
+          "timestamp": "00:09:00"
+        }
+      ],
+      "subtopics": []
+    },
+    {
+      "title": "Organisation und Ablauf des Praktikums Grundlagen der Programmierung (PGDP) – Jan Wagner",
+      "timestamp_start": "00:15:00",
+      "timestamp_end": "00:55:00",
+      "description": "Jan Wagner (Lehrstuhl 4) erläutert detailliert das Praktikum IN0002: Semesterstruktur, Zentralübungen, Matching, Hausaufgaben, Bewertung, Plagiate, Prüfungsanmeldung und Kommunikationskanäle.",
+      "concepts": [
+        {
+          "name": "Übungsleitung und Team",
+          "type": "definition",
+          "description": "Jan Wagner (Organisation), Bechtat (Mitarbeiter Lehrstuhl 15), 7 studentische Hilfswissenschaftler (z. B. Johannes Störr).",
+          "source_quote": "Mein Name ist Jan Wagener. Ich bin Mitarbeiter des Lehrstuhls 4 ... Bechtat ist Mitarbeiter von Lehrstuhl 15 ... sieben weitere studentische Hiwis",
+          "timestamp": "00:15:30"
+        },
+        {
+          "name": "Semesterstruktur (15 Wochen)",
+          "type": "definition",
+          "description": "15 Semesterwochen, Weihnachtsferien zwischen Woche 10 und 11. Wöchentlich zwei Zentralübungen, Hausaufgaben bis Woche 13, nicht bewertete P-Aufgaben zum Üben.",
+          "source_quote": "Das Semester besteht aus 15 Wochen. ... nach Woche 10, vor Woche 11, sind dann zwei Wochen Weihnachtsferien.",
+          "timestamp": "00:16:40"
+        },
+        {
+          "name": "Konzept der Zentralübungen (ZÜ1 und ZÜ2)",
+          "type": "definition",
+          "description": "Jede Woche zwei Zentralübungen. Jede ZÜ hat mehrere parallele Termine (4 Slots), einige in der Innenstadt. Studierende melden sich über das Matching-Tool verbindlich für je einen Slot von ZÜ1 und ZÜ2 an. Die Übungen bestehen aus interaktivem Vortrag und eigenständigen Programmieraufgaben mit Tutorenbetreuung.",
+          "source_quote": "es gibt zwei Zentralübungen, Zentralübung 1 und Zentralübung 2 und für jede Zentralübung gibt es jetzt eben vier Termine ... melden sich für einen der vier Termine ... an und dann jede Woche zu dem geht",
+          "timestamp": "00:18:00"
+        },
+        {
+          "name": "Streaming der Zentralübungen",
+          "type": "definition",
+          "description": "Nur die von Jan Wagner gehaltenen ZÜs (eine aus Block 1 und eine aus Block 2) werden gestreamt und aufgezeichnet. Die parallelen Termine ohne Stream dienen nur der Entlastung.",
+          "source_quote": "Ich werde diese Übung halten und ich werde diese Übung halten. Die beiden werden auch aufgezeichnet. ... Sie werden auch gestreamt",
+          "timestamp": "00:19:30"
+        },
+        {
+          "name": "Sonderregelung erste Woche (ZÜ nach Nachnamen)",
+          "type": "definition",
+          "description": "In der ersten Woche (vor dem Matching) werden die Studierenden nach Anfangsbuchstaben des Nachnamens auf die ZÜ-Termine verteilt, um einen reibungslosen Ablauf zu gewährleisten.",
+          "source_quote": "teilen wir Sie heute, diese Woche nach Nachname auf. ... Alle Leute, die der Nachname mit A bis DH beginnt, sollten diese Woche diese Zentralübung besuchen.",
+          "timestamp": "00:21:40"
+        },
+        {
+          "name": "Hausaufgaben (H-Aufgaben)",
+          "type": "definition",
+          "description": "Wöchentlich ein Blatt ab Woche 1 bis Woche 13. Veröffentlichung donnerstags, Abgabe sonntags 10 Tage später um 18:00 Uhr über Artemis. Erste Abgabe 30. Oktober. Einzelarbeit, keine Zusammenarbeit (Plagiatsprüfung).",
+          "source_quote": "Die Deadline ... wird immer an einem Donnerstag veröffentlicht und dann ... am Sonntag eine Woche danach, am 18 Uhr ist immer die Abgabe.",
+          "timestamp": "00:24:00"
+        },
+        {
+          "name": "Punktesystem und Bestehensregelung",
+          "type": "definition",
+          "description": "Pro Blatt i.d.R. 20 Punkte, insgesamt 250 Punkte (5+11*20+25). Bestehensgrenze 50-60 % der Punkte. Zusätzlich müssen 9 von 12 Blättern (Nr. 2–13) mit mindestens 40 % der Punkte bestanden werden. Bonuspunkte (ca. 10-15 %) können nicht zum Bestehen genutzt werden, verbessern nur die Note.",
+          "source_quote": "Auf jede Hausaufgabe gibt es 20 Punkte, außer auf das erste Blatt, da gibt es weniger und dann haben wir noch ein Blatt, wo es ein bisschen mehr gibt, sodass es sich insgesamt auf 250 Punkte ... beläuft. ... Bestehensgrenze ... so bei 50 bis 60 Prozent der Punkte",
+          "timestamp": "00:25:00",
+          "formulas": [
+            "Gesamtpunkte = 5 (Blatt 1) + 11 * 20 (Blätter 2-12) + 25 (Blatt 9) = 250",
+            "Bestehen: mindestens 50–60% von 250 Punkten UND 9 von 12 Blättern mit ≥ 40% der Blattpunkte"
+          ]
+        },
+        {
+          "name": "Korrekturmodi: automatisch und manuell",
+          "type": "definition",
+          "description": "Einfache Aufgaben werden automatisch mit (Public/Hidden) Tests bewertet. Komplexere manuell durch Tutoren. Nach manueller Korrektur eine Woche Complaint-Frist; bei automatischer Korrektur direkt nach Abgabe Complaint möglich. Complaint nur bei falscher Anwendung des Korrekturschemas oder technischen Fehlern, nicht zur Kritik des Schemas.",
+          "source_quote": "beim manuellen Modus ... nehmen wir uns eine Woche Zeit, um Ihre Abgaben zu korrigieren ... nach Ende der Korrekturphase eine Woche lang Zeit, einen Complaint einzureichen. ... automtischen Modus ... fällt natürlich diese eine Woche mit manuellen Korrekturfeld weg",
+          "timestamp": "00:26:30"
+        },
+        {
+          "name": "Plagiatsprüfung und Konsequenzen",
+          "type": "definition",
+          "description": "Code wird auf Plagiate (Ähnlichkeit zu anderen Abgaben, Musterlösung, Internet) geprüft. Bei Täuschungsversuch droht 50U (Unterschleif), d.h. ein weiterer Versuch (Wiederholung im nächsten Jahr). Kleine, zufällige Übereinstimmungen werden toleriert. Stack Overflow darf genutzt werden, aber kopierter Code muss zitiert werden, sonst Plagiat. Bei Unsicherheit lieber zitieren.",
+          "source_quote": "wenn wir herausfinden sollten, dass Sie zum Beispiel den gleichen Code wie jemand anders abgegeben haben, dann wird das mit einer 50U geahndet",
+          "timestamp": "00:29:00"
+        },
+        {
+          "name": "Nutzung von Stack Overflow und Internet",
+          "type": "definition",
+          "description": "Internetnutzung ist grundsätzlich erlaubt (Open Book). Größere Code-Stücke müssen zitiert werden. Reines Kopieren fremder Lösungen ist nicht zulässig.",
+          "source_quote": "Sie dürfen natürlich das Internet benutzen ... Wenn Sie größere Stücke Code kopieren von Stack Overflow, dann sollten Sie das zumindest vermerken im Code.",
+          "timestamp": "00:31:00"
+        },
+        {
+          "name": "Effizienzbetrachtung in Aufgaben",
+          "type": "definition",
+          "description": "Effizienz (Laufzeit, Speicher) wird nur dann bewertet, wenn die Aufgabenstellung es explizit fordert. Ansonsten genügt eine funktionierende Lösung für die volle Punktzahl.",
+          "source_quote": "Allerdings geht es in der Einführung der Informatik ... eher relativ wenig um Effizienz. ... wenn wir nichts dazu schreiben, dass Sie dann die Punkte nicht kriegen, nur weil es eben zu lange läuft.",
+          "timestamp": "00:33:00"
+        },
+        {
+          "name": "Musterlösungen und Tests",
+          "type": "definition",
+          "description": "Musterlösungen werden direkt nach der Deadline zusammen mit den Tests veröffentlicht. Public Tests geben vor der Abgabe ein erstes Feedback; Hidden Tests erst danach. Studierende können eigene Tests schreiben.",
+          "source_quote": "Ja, die werden direkt nach der Deadline veröffentlicht, zusammen mit den Tests auch.",
+          "timestamp": "00:35:00"
+        }
+      ],
+      "key_terms": [
+        "PGDP",
+        "IN0002",
+        "Zentralübung",
+        "Matching",
+        "Artemis",
+        "Hausaufgaben",
+        "P-Aufgaben",
+        "Complaint",
+        "50U",
+        "Plagiat",
+        "Öffentliche/Versteckte Tests",
+        "Stack Overflow",
+        "Bonuspunkte",
+        "Prüfungsanmeldung"
+      ],
+      "formulas": [],
+      "qa_pairs": [
+        {
+          "question": "Wie wird man den Zentralübungen außerhalb dieser Woche zugeteilt?",
+          "answer": "Über das Matching-Verfahren (wird in 10 Minuten erklärt).",
+          "timestamp": "00:22:00"
+        },
+        {
+          "question": "Werden parallele Zentralübungen gestreamt?",
+          "answer": "Nein, nur die beiden von Jan Wagner gehaltenen Übungen werden gestreamt.",
+          "timestamp": "00:22:30"
+        },
+        {
+          "question": "Sind Aufzeichnungen der gestreamten Zentralübungen für alle verfügbar?",
+          "answer": "Ja, die Aufzeichnungen stehen allen Teilnehmern offen.",
+          "timestamp": "00:22:50"
+        },
+        {
+          "question": "Gibt es eine Teilnehmerbegrenzung für die Präsenz-Zentralübungen?",
+          "answer": "Ja, durch die Hörsaalkapazität. Online-Teilnahme (Stream) hat keine Begrenzung.",
+          "timestamp": "00:23:10"
+        },
+        {
+          "question": "Was ist der Inhalt der Zentralübungen?",
+          "answer": "Praktische Anwendung des Stoffs aus IN0001 in Form von Programmieraufgaben, begleitend zur Vorlesung.",
+          "timestamp": "00:23:30"
+        },
+        {
+          "question": "Gibt es bei zufälliger Code-Ähnlichkeit trotzdem einen Plagiatsvorwurf?",
+          "answer": "Nur wenn ein Plagiat wirklich überzeugend vorliegt. Kurze identische Code-Stellen sind kein Problem. Bei Vorwurf gibt es eine mehrwöchige Einspruchsfrist.",
+          "timestamp": "00:30:20"
+        },
+        {
+          "question": "Darf man Tests untereinander teilen?",
+          "answer": "Ja, aber nur auf eine bestimmte Weise; wird in Woche 2 genauer mitgeteilt.",
+          "timestamp": "00:38:00"
+        },
+        {
+          "question": "Kann man Hausaufgaben mit Kollegen diskutieren?",
+          "answer": "Die H-Aufgaben sind in Einzelarbeit zu lösen. Nur die P-Aufgaben (ungraded) dürfen besprochen werden.",
+          "timestamp": "00:38:30"
+        },
+        {
+          "question": "Wofür gibt es Bonuspunkte?",
+          "answer": "Meist für schwierigere Extra-Aufgaben.",
+          "timestamp": "00:34:00"
+        },
+        {
+          "question": "Wie viele Bonuspunkte gibt es insgesamt?",
+          "answer": "Ca. 10–15 % der Gesamtpunktzahl, noch nicht festgelegt.",
+          "timestamp": "00:36:30"
+        },
+        {
+          "question": "Sind die Hausaufgabenpunkte nur für das PGDP relevant?",
+          "answer": "Ja, die Hausaufgaben zählen nur für IN0002. Die Vorlesung IN0001 hat eine separate Klausur.",
+          "timestamp": "00:37:00"
+        },
+        {
+          "question": "Bekommt man vor der Abgabe Feedback zu den automatischen Tests?",
+          "answer": "Public Tests geben sofort Feedback nach Push; Hidden Tests erst nach der Deadline. Umfang des Feedbacks variiert mit der Aufgabenkomplexität.",
+          "timestamp": "00:33:40"
+        },
+        {
+          "question": "Was passiert, wenn man die Aufgabenstellung anders interpretiert?",
+          "answer": "Im Complaint kann man seine Interpretation darlegen. Ist sie valide, können Punkte nachträglich vergeben werden.",
+          "timestamp": "00:35:40"
+        },
+        {
+          "question": "Gibt es Musterlösungen zu den Hausaufgaben?",
+          "answer": "Ja, sie werden nach der Deadline veröffentlicht.",
+          "timestamp": "00:35:20"
+        },
+        {
+          "question": "Beinhalten die Public Tests auch Randfälle (Edge Cases)?",
+          "answer": "Das hängt von der Schwierigkeit ab. Oft nicht sehr viele; Studierende sollen lernen, selbst Tests zu entwerfen.",
+          "timestamp": "00:35:50"
+        },
+        {
+          "question": "Wie kommt man rechnerisch auf die 250 Gesamtpunkte?",
+          "answer": "5 (Blatt 1) + 11*20 (Blätter 2-12) + 25 (Blatt 9) = 250.",
+          "timestamp": "00:36:00"
+        },
+        {
+          "question": "Gibt es jede Woche mehrere Aufgaben?",
+          "answer": "Ja, die Punktzahl teilt sich auf mehrere Aufgaben pro Blatt auf.",
+          "timestamp": "00:36:10"
+        },
+        {
+          "question": "Werden Teilpunkte für nicht ganz korrekte Methoden vergeben?",
+          "answer": "In der Regel erfolgt die Bepunktung auf Methodenebene: funktionierende Methoden geben Punkte, nicht funktionierende nicht. Nur bei größeren Aufgaben gibt es u.U. Teilpunkte für Ansätze.",
+          "timestamp": "00:36:20"
+        },
+        {
+          "question": "Wo reicht man Complaints ein?",
+          "answer": "Im Artemis-System; wird in der ersten Zentralübung gezeigt.",
+          "timestamp": "00:36:40"
+        },
+        {
+          "question": "Sind die Hausaufgaben in den 180 Zeitstunden für 6 ECTS enthalten?",
+          "answer": "Ja, prinzipiell. Erfahrungsgemäß verteilt sich die Arbeitslast stark auf das PGDP, während die Vorlesung weniger aufwändig ist.",
+          "timestamp": "00:39:00"
+        }
+      ],
+      "subtopics": [
+        {
+          "title": "Matching-Verfahren und Prüfungsanmeldung über ZÜ1",
+          "concepts": [
+            {
+              "name": "Matching-Tool und -Fristen",
+              "type": "definition",
+              "description": "Anmeldung zu den ZÜ-Slots über matching.in.tum.de. Das Matching für ZÜ1 stellt gleichzeitig die Prüfungsanmeldung für das PGDP dar. Wer keine Note möchte, nimmt nicht teil. Ausnahmen: Bioinformatiker (eigener Kurs IN2342) und Frühstudierende (manuelle Anmeldung). Frist endet Sonntag 18:00 Uhr, danach verbindlich. Abmeldung nur bei Attest für mindestens 14 Tage.",
+              "source_quote": "Die Teilnahme an diesem unteren Matching, dem ZÜ1-Matching, ist die Anmeldung zur Prüfung. ... Wenn Sie an dem Matching für ZÜ1 teilnehmen, dann sind Sie genau dann für die Prüfung angemeldet",
+              "timestamp": "00:40:00"
+            }
+          ],
+          "key_terms": [
+            "Matching.in.tum.de",
+            "Prüfungsanmeldung",
+            "Bioinformatiker IN2342",
+            "Frühstudierende",
+            "14-Tage-Attest"
+          ],
+          "qa_pairs": [
+            {
+              "question": "Reicht die Teilnahme am ZÜ1-Matching für die Prüfungsanmeldung?",
+              "answer": "Ja, das ZÜ1-Matching ist ausschlaggebend. Die Liste der Teilnehmer wird nach TUM Online übertragen.",
+              "timestamp": "00:41:00"
+            },
+            {
+              "question": "Kann man sich nach dem Matching ummelden, falls man einen anderen Termin braucht?",
+              "answer": "Nur in begründeten Fällen (z. B. Überschneidung mit einer anderen Vorlesung). Man kann seine Präferenzen im Tool selbst setzen; trotzdem falsch zugewiesene Slots nur nach Rücksprache mit der Übungsleitung.",
+              "timestamp": "00:41:30"
+            },
+            {
+              "question": "Macht es einen Unterschied, ob man früh oder spät am Matching teilnimmt?",
+              "answer": "Nein, das Matching läuft nicht nach 'first come, first serve', sondern wertet alle Präferenzlisten gleichzeitig nach Fristende aus.",
+              "timestamp": "00:42:00"
+            },
+            {
+              "question": "Was tun bei verspäteter Immatrikulation, die ein Matching verhindert?",
+              "answer": "Dann bitte direkt an Jan Wagner wenden; es wird eine Lösung gefunden.",
+              "timestamp": "00:42:20"
+            }
+          ]
+        },
+        {
+          "title": "Kommunikation und genutzte Plattformen",
+          "concepts": [
+            {
+              "name": "Zulip als Hauptkommunikationskanal",
+              "type": "definition",
+              "description": "Alle Fragen zu PGDP und Vorlesung über Zulip (Streams). Keine E-Mails oder Anrufe. Bei Fragen zuerst selbst suchen und in den Streams nachlesen; erst dann neue Frage stellen. Öffentliche Streams bevorzugen. Eine E-Mail-Adresse der Übungsleitung existiert nur für den Fall, dass Zulip ausfällt.",
+              "source_quote": "Die Hauptkommunikation für das PGDP findet über Zulib statt. ... kommunizieren Sie mit uns über Sulib.",
+              "timestamp": "00:43:00"
+            },
+            {
+              "name": "Übersicht benötigter Tools",
+              "type": "definition",
+              "description": "Fünf Tools/Plattformen: Moodle (Selbsteinschreibung), Artemis (Hausaufgaben), Sulib/Zulip (Kommunikation), RBG Live (Streams), Matching-Tool (Anmeldung). Für alle kann man sich ab sofort selbstständig registrieren.",
+              "source_quote": "Am Ende habe ich hier noch einen Überblick über die ganzen Tools und Seiten, die wir verwenden. Da habe ich fünf Stück.",
+              "timestamp": "00:44:30"
+            }
+          ],
+          "key_terms": [
+            "Zulip",
+            "Sulib",
+            "RBG Live",
+            "Moodle",
+            "Artemis",
+            "Matching-Tool"
+          ],
+          "qa_pairs": []
+        },
+        {
+          "title": "To-do-Liste für die erste Woche",
+          "concepts": [
+            {
+              "name": "Erste Schritte",
+              "type": "definition",
+              "description": "1. Erste Zentralübung besuchen (Termin nach Nachname). 2. Bis Sonntag am Matching teilnehmen. 3. In allen Tools registrieren. 4. Erste Hausaufgabe bis Sonntag nächster Woche bearbeiten (Deadline 30. Oktober).",
+              "source_quote": "Heute bis Freitag die erste Zentralübung ... bis diesen Sonntag nehmen Sie eine Matching-Teil ... sollten Sie sich in die ganzen Tools ... anschauen ... bis Sonntag nächste Woche ist dann eben die erste Hausaufgabe zu bearbeiten.",
+              "timestamp": "00:47:00"
+            }
+          ],
+          "key_terms": [],
+          "qa_pairs": []
+        }
+      ]
+    },
+    {
+      "title": "Inhaltliche Einführung, Bedeutung des Praktikums, Konzepte und Demonstration (Prof. Westermann)",
+      "timestamp_start": "00:55:00",
+      "timestamp_end": "01:20:00",
+      "description": "Prof. Westermann betont die Wichtigkeit des Praktikums für das Bestehen der Klausur, warnt vor Prokrastination und gibt einen Überblick über die Denkweise der Informatik, die Rolle von Java und grundlegende Konzepte. Eine Live-Demo eines 3D-Spiels illustriert, was programmierbar ist.",
+      "concepts": [
+        {
+          "name": "Bedeutung der aktiven Praktikumsteilnahme",
+          "type": "theorem",
+          "description": "Das bloße Lesen eines Buches oder Skripts reicht nicht, um Programmieren zu lernen. Hands-on-Erfahrung ist essenziell. Auch für die theoretische Prüfung ist die Teilnahme am Praktikum die beste Vorbereitung.",
+          "source_quote": "die beste Vorbereitung für diese Prüfung ist natürlich die aktive Teilnahme am Praktikum. ... eine Programmiersprache ... lernen Sie nicht nur vom Lesen eines Buches",
+          "timestamp": "00:56:00"
+        },
+        {
+          "name": "Mahnung zu kontinuierlichem Arbeiten",
+          "type": "theorem",
+          "description": "Gerade zu Beginn des Studiums ohne Anwesenheitspflicht ist die Gefahr des Schleifenlassens groß. Es ist extrem schwierig, in den letzten drei Wochen den Stoff von 2,5 Monaten aufzuholen. Auch für erfahrene Programmierer kommen neue, nicht nur sprachspezifische Inhalte.",
+          "source_quote": "Es wird extrem schwierig, dann hinten in den letzten drei Wochen das aufzuholen, was Sie in den ersten zweieinhalb Monaten nicht mitgelernt haben.",
+          "timestamp": "00:57:00"
+        },
+        {
+          "name": "Zielsetzung der Vorlesung: Grundkonzepte, nicht nur Java",
+          "type": "definition",
+          "description": "Die Vorlesung führt in die fundamentalen Konzepte der Informatik ein: Algorithmusbegriff, Effizienz, Datenstrukturen, Speicherhierarchie, Algorithmenentwicklung. Java dient als Mittel zum Zweck.",
+          "source_quote": "wir wollen letztendlich Sie in die Grundkonzepte der Informatik einführen. Solche Dinge wie einen Algorithmus ... Effizienzbetrachtung machen ... grundlegende Datenstrukturen",
+          "timestamp": "00:59:00"
+        },
+        {
+          "name": "Denkweise der Informatik",
+          "type": "definition",
+          "description": "Der Informatiker sucht nicht nur eine Lösung für ein Problem (wie der Mathematiker), sondern eine effizient berechenbare Lösung unter Berücksichtigung von Rechner und Programmiersprache. Effizienz und praktische Realisierbarkeit stehen im Vordergrund.",
+          "source_quote": "der Informatiker will auch eine effiziente Lösung und vor allem eine effizient berechenbare Lösung entwickeln. ... er hat die Programmiersprache im Hinterkopf ... weiß, was er ... dem Rechner abverlangen kann.",
+          "timestamp": "01:00:30"
+        },
+        {
+          "name": "Warum Java?",
+          "type": "definition",
+          "description": "Java ist weit verbreitet, objektorientiert und erlaubt einen leichten Umstieg auf andere Sprachen (z. B. C++, Shader). Entscheidend sind die grundlegenden Konzepte, nicht die Sprache selbst. Die Diskussion 'warum nicht Assembler/C++' ist zweitrangig.",
+          "source_quote": "Java ist eine Programmiersprache, die durchaus in der Industrie noch sehr weit verbreitet ist. ... wer die grundlegenden Konzepte der Programmierung in Java kann, der sollte eigentlich relativ problemlos auf jede andere Programmiersprache ... umsteigen können.",
+          "timestamp": "01:02:00"
+        },
+        {
+          "name": "Demonstration: Interaktives 3D-Spiel und GPU-Programmierung",
+          "type": "demonstration",
+          "description": "Es wird ein Stück Software gezeigt – ein interaktives 3D-Spiel, das in Echtzeit (60 FPS) auf einer Spielekonsole läuft. Die Demo illustriert, was mit effizienter Programmierung, Datenstrukturen, Physiksimulation und Grafikprogrammierung möglich ist. Im zweiten Semester (Games Engineering) lernen Studierende, Grafikkarten (GPUs) mit Shadersprachen zu programmieren, um ähnliche Anwendungen zu realisieren.",
+          "source_quote": "Was Sie hier sehen, ist ein Stück Software. Ein Programm ... geschrieben vielleicht in einer Programmiersprache wie Java. ... Das ist jetzt ein Live ... von einer Spielekonsole. ... mit 60 Frames pro Sekunde",
+          "timestamp": "01:04:00"
+        },
+        {
+          "name": "Brücke zum weiteren Studium (Games Engineering)",
+          "type": "example",
+          "description": "Im Kontext Games Engineering lernen Studierende im zweiten Semester, wie man Grafikkarten (GPUs) mit Shadersprachen programmiert. Die jetzigen Grundlagen aus IN0001/PGP sind die Basis dafür.",
+          "source_quote": "Im zweiten Semester beschäftigen wir uns dann ... damit, wie man letztendlich sowas hinbekommt. ... wie man Grafikkarten programmiert.",
+          "timestamp": "01:06:00"
+        }
+      ],
+      "key_terms": [
+        "Algorithmus",
+        "Effizienz",
+        "Datenstrukturen",
+        "Speicherhierarchie",
+        "Shader-Sprachen",
+        "GPU",
+        "Grafikkarten",
+        "60 FPS",
+        "Games Engineering",
+        "Denkweise der Informatik"
+      ],
+      "formulas": [],
+      "qa_pairs": [],
+      "subtopics": []
+    },
+    {
+      "title": "Abschließende Fragen und informelle Diskussion nach der Vorlesung",
+      "timestamp_start": "01:20:00",
+      "timestamp_end": "01:30:00",
+      "description": "Nach dem offiziellen Teil stellen Studierende noch Fragen zu Terminen, Überschneidungen, englischer Prüfung und anderen Studiengängen. Es finden kurze Gespräche zwischen Dozenten und Studierenden statt.",
+      "concepts": [],
+      "subtopics": [],
+      "key_terms": [],
+      "formulas": [],
+      "qa_pairs": [
+        {
+          "question": "Was tun bei Überlappungen der ZÜ-Termine mit anderen Vorlesungen?",
+          "answer": "Die Haupt-ZÜs werden gestreamt und aufgezeichnet. Bei Überschneidungen kann man auf die Aufzeichnung ausweichen.",
+          "timestamp": "01:21:00"
+        },
+        {
+          "question": "Kann man die Prüfung komplett auf Englisch schreiben?",
+          "answer": "Die Antworten können in jedem Fall auf Englisch sein. Ob die Fragen auf Englisch gestellt werden dürfen, wird noch geklärt.",
+          "timestamp": "01:22:00"
+        },
+        {
+          "question": "Gibt es für den Studiengang Management Technology eine Informatik-Einführung?",
+          "answer": "Ja, eine spezielle Einführung in diesem Semester. Bitte an die Fachstudienberatung wenden.",
+          "timestamp": "01:23:00"
+        },
+        {
+          "question": "Wann findet die erste Übung statt und wo sind die Informationen?",
+          "answer": "Die Informationen stehen auf der Moodle-Seite des Praktikums.",
+          "timestamp": "01:25:00"
+        },
+        {
+          "question": "Was bedeuten die Abkürzungen auf den Folien (CG, etc.)?",
+          "answer": "Bezieht sich auf die Website des Lehrstuhls (www.cg.in.tum.de). Wird später im Studium relevant.",
+          "timestamp": "01:26:00"
+        }
+      ]
+    }
+  ],
+  "administrative": {
+    "announcements": [
+      "Die Vorlesung wird aus dem Karl-von-Max-von-Bauernfeind-Hörsaal live in zwei weitere Hörsäle gestreamt und aufgezeichnet.",
+      "Studierende sollen sich im Moodle-Kurs zur Vorlesung und zum Praktikum selbst einschreiben.",
+      "Fragen bitte über das wöchentliche Q&A-Forum auf Moodle (auf Englisch) oder über Zulip stellen.",
+      "Das Praktikum IN0002 heißt offiziell jetzt 'Grundlagenpraktikum Programmierung' (früher PGDP), Abkürzung bleibt PGDP.",
+      "In der ersten Woche findet nur ZÜ2 statt; die Einteilung erfolgt nach Anfangsbuchstaben des Nachnamens.",
+      "Das Matching für die Zentralübungen und die Prüfungsanmeldung läuft bis Sonntag 18:00 Uhr.",
+      "Am 30. Oktober ist die Abgabe der ersten Hausaufgabe.",
+      "Während der Weihnachtsferien werden zwei Hausaufgabenblätter mit verlängerten Abgabefristen bearbeitet.",
+      "Bei Allerheiligen entfallen fast alle Zentralübungen; Ersatzregelungen werden noch bekanntgegeben.",
+      "Bioinformatiker belegen statt PGDP den Kurs IN2342 und haben eine eigene Montags-Übung.",
+      "Frühstudierende melden sich bitte nicht über das Matching an, sondern werden manuell eingetragen."
+    ],
+    "references": [
+      "Moodle-Kurs für IN0001 und IN0002",
+      "Artemis (Hausaufgabenplattform)",
+      "Zulip (Kommunikationsplattform)",
+      "RBG Live (Streaming und Aufzeichnungen)",
+      "Matching-Tool (matching.in.tum.de)",
+      "Lehrstuhl-Webseite: www.cg.in.tum.de",
+      "Vorlesungsfolien (geerbt von Prof. Seidel, Prof. Bretschner u.a.)",
+      "Java (Programmiersprache des Praktikums)",
+      "Literaturhinweise werden im Laufe des Semesters gegeben (keine explizite Nennung in dieser Stunde)"
+    ]
+  },
+  "lecture_id": "8c31dfcd-1ba1-4069-baa0-88218696ed91",
+  "generated_at": "2026-06-08T19:12:09.174359",
+  "pass": "outline_extraction"
+}

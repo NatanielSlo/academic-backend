@@ -85,7 +85,8 @@ class LLMService:
         model: str = "simple",
         temperature: float = 0.3,
         max_tokens: int = 4096,
-        log_id: Optional[int] = None
+        log_id: Optional[int] = None,
+        json_mode: bool = False
     ) -> str:
         """
         Generate completion using DeepSeek API.
@@ -121,19 +122,29 @@ class LLMService:
             })
 
             # Call DeepSeek API
-            with httpx.Client(timeout=120.0) as client:
+            # Use longer timeout for large requests (especially outline generation)
+            timeout_seconds = 300.0 if max_tokens > 4096 else 120.0
+
+            # Build request payload
+            request_json = {
+                "model": model_name,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens
+            }
+
+            # Add JSON mode if requested
+            if json_mode:
+                request_json["response_format"] = {"type": "json_object"}
+
+            with httpx.Client(timeout=timeout_seconds) as client:
                 response = client.post(
                     f"{self.base_url}/chat/completions",
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
                         "Content-Type": "application/json"
                     },
-                    json={
-                        "model": model_name,
-                        "messages": messages,
-                        "temperature": temperature,
-                        "max_tokens": max_tokens
-                    }
+                    json=request_json
                 )
 
                 response.raise_for_status()

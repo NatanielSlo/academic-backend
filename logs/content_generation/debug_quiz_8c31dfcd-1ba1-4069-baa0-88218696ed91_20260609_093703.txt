@@ -1,0 +1,149 @@
+{
+  "quiz_metadata": {
+    "total_questions": 10,
+    "topics_covered": [
+      "Organizational structure of IN0001 and PGDP",
+      "Communication tools and platforms",
+      "Homework, grading, and plagiarism policies",
+      "Fundamental computer science concepts and mindset",
+      "Role of Java and programming language choice",
+      "Central exercise matching and exam registration",
+      "Lecture streaming and materials",
+      "Bonus points system",
+      "Real-time 3D demonstration and performance implications"
+    ],
+    "difficulty_distribution": {
+      "basic": 3,
+      "intermediate": 5,
+      "advanced": 2
+    }
+  },
+  "questions": [
+    {
+      "question_id": 1,
+      "type": "multiple_choice",
+      "difficulty": "basic",
+      "topic": "Organizational structure of IN0001 and PGDP",
+      "question_text": "What is the relationship between the lecture \"Einführung in die Informatik\" (IN0001) and the \"Praktikum Grundlagen der Programmierung\" (PGDP, IN0002)?",
+      "options": [
+        {"label": "A", "text": "PGDP is a mandatory part of IN0001, and both share a single combined exam."},
+        {"label": "B", "text": "IN0001 and PGDP are independent modules with separate exams."},
+        {"label": "C", "text": "PGDP is an optional lab supplement that does not affect the grade for IN0001."},
+        {"label": "D", "text": "IN0001 is a prerequisite that must be completed before enrolling in PGDP."}
+      ],
+      "correct_answer": "B",
+      "explanation": "The lecture states clearly that IN0001 and IN0002 are two separate, independent modules with their own exams. Students can take either one alone or both simultaneously. The other options imply a dependency or combined assessment that does not exist.",
+      "source_reference": "Begrüßung und organisatorische Einführung – Modulstruktur: IN0001 und IN0002 sind eigenständig"
+    },
+    {
+      "question_id": 2,
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Communication tools and platforms",
+      "question_text": "True or False: For the PGDP, the primary communication channel with instructors is email.",
+      "correct_answer": "False",
+      "explanation": "The main communication channel is Zulip (also referred to as Zulib). Students are instructed to use Zulip streams for all questions. Email is only a fallback if Zulip goes down. Direct emails or calls are discouraged."
+    },
+    {
+      "question_id": 3,
+      "type": "short_answer",
+      "difficulty": "intermediate",
+      "topic": "Homework, grading, and plagiarism policies",
+      "question_text": "Explain how the passing requirement for the PGDP is structured. What are the two conditions a student must meet?",
+      "sample_answer": "The student must achieve at least 50–60% of the total possible points (250 points) AND must pass at least 9 out of the 12 homework sheets (sheets 2 to 13) with at least 40% of the points on each of those sheets.",
+      "key_points": [
+        "overall points threshold (50–60% of 250)",
+        "at least 9 of 12 sheets passed",
+        "each passed sheet needs ≥40%",
+        "sheets 2–13 count toward the sheet requirement"
+      ],
+      "explanation": "The two-part requirement ensures that students not only accumulate enough total points but also demonstrate consistent performance across the semester. A student who scores very high on some sheets and zero on others may still fail if too few sheets are passed."
+    },
+    {
+      "question_id": 4,
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Homework, grading, and plagiarism policies",
+      "question_text": "What is the consequence if a student's homework submission is found to be a clear plagiarism case (e.g., copying from another student's submission)?",
+      "options": [
+        {"label": "A", "text": "The student receives a zero on that one homework sheet and a warning."},
+        {"label": "B", "text": "The student fails the entire module (IN0002) with a \"50U\" and must retake it in a future semester."},
+        {"label": "C", "text": "The student is immediately expelled from the course but can re-enroll next year."},
+        {"label": "D", "text": "The student's grade is lowered by one full letter grade, but a passing grade is still possible."}
+      ],
+      "correct_answer": "B",
+      "explanation": "The lecture specifically mentions \"50U\" (Unterschleif) for confirmed plagiarism, which means a failed attempt and the necessity to repeat the whole course the following year. It is not a minor penalty like a single zero or a grade reduction; it is a serious academic integrity violation with severe consequences.",
+      "source_reference": "Organisation und Ablauf des Praktikums – Plagiatsprüfung und Konsequenzen"
+    },
+    {
+      "question_id": 5,
+      "type": "true_false",
+      "difficulty": "intermediate",
+      "topic": "Fundamental computer science concepts and mindset",
+      "question_text": "True or False: According to the lecture, a computer scientist's primary goal is to find any solution to a problem, regardless of efficiency, as long as it is mathematically correct.",
+      "correct_answer": "False",
+      "explanation": "The lecture emphasizes that the computer scientist is not just looking for any solution, but for an efficiently computable one that is practically realizable on a real machine. This contrasts with a pure mathematician who might be satisfied with an existence proof. Efficiency and resource constraints are central to the CS mindset."
+    },
+    {
+      "question_id": 6,
+      "type": "short_answer",
+      "difficulty": "intermediate",
+      "topic": "Role of Java and programming language choice",
+      "question_text": "Why does the course use Java as the programming language, and what is the course's main objective with respect to programming languages?",
+      "sample_answer": "Java is used because it is widely adopted in industry and is object-oriented, providing a solid platform for learning. However, the course's main objective is not to teach Java itself, but to convey fundamental programming concepts (such as algorithms, data structures, and efficiency) that are language-independent. Mastery of these concepts in Java should enable a smooth transition to other languages.",
+      "key_points": [
+        "Java is prevalent and object-oriented",
+        "primary goal is transferable concepts, not syntax",
+        "concepts learned apply to other languages (e.g., C++, shader languages)"
+      ],
+      "explanation": "The answer should reflect the idea that the language is a tool to teach deeper CS principles."
+    },
+    {
+      "question_id": 7,
+      "type": "multiple_choice",
+      "difficulty": "advanced",
+      "topic": "Central exercise matching and exam registration",
+      "question_text": "Which statement best describes the role of the matching process for Central Exercise 1 (ZÜ1)?",
+      "options": [
+        {"label": "A", "text": "It is solely for assigning exercise slots; exam registration must be done separately in TUMonline."},
+        {"label": "B", "text": "Participating in the ZÜ1 matching automatically serves as your exam registration for the PGDP."},
+        {"label": "C", "text": "After the matching, you can freely swap slots with other students as needed."},
+        {"label": "D", "text": "The matching works on a first-come, first-served basis, so joining early guarantees your preferred slot."}
+      ],
+      "correct_answer": "B",
+      "explanation": "The ZÜ1 matching is explicitly the exam registration; by participating, you are signed up for the exam. Slots are assigned based on collected preferences after the deadline, not first-come, first-served, and changes afterward are only possible with a medical certificate covering ≥14 days. This detail requires careful attention to the administrative rules.",
+      "source_reference": "Matching-Verfahren und Prüfungsanmeldung über ZÜ1"
+    },
+    {
+      "question_id": 8,
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Lecture streaming and materials",
+      "question_text": "True or False: All central exercise sessions (ZÜ1 and ZÜ2) are live-streamed and recorded.",
+      "correct_answer": "False",
+      "explanation": "Only the two sessions personally conducted by Jan Wagner (one from the ZÜ1 block and one from the ZÜ2 block) are streamed and recorded. The other parallel time slots are held solely to manage room capacity and are not streamed. Recordings of the streamed sessions are available to all students."
+    },
+    {
+      "question_id": 9,
+      "type": "short_answer",
+      "difficulty": "advanced",
+      "topic": "Real-time 3D demonstration and performance implications",
+      "question_text": "The lecture showed a real-time 3D game running at 60 FPS. Connect this demonstration to the earlier discussion about the computer scientist's mindset. What specific aspects of the CS mindset were implicitly highlighted by this demo?",
+      "sample_answer": "The demo exemplified the need for efficiency and practical realizability. Achieving 60 FPS requires algorithms and data structures that run fast enough to meet hard real-time constraints. It also implicitly shows the use of specialized hardware (GPU) and low-level optimization. This aligns with the idea that a computer scientist must design solutions that are not only correct but also efficient and feasible on actual hardware.",
+      "key_points": [
+        "real-time performance demands efficiency",
+        "algorithms and data structures must be optimized",
+        "practical realizability on concrete hardware (GPU)",
+        "connection to the CS mindset of seeking efficient, computable solutions"
+      ],
+      "explanation": "A strong answer will link the demo to the lecture's earlier statement that computer scientists look for efficiently computable solutions, and will note that performance constraints shape design."
+    },
+    {
+      "question_id": 10,
+      "type": "multiple_choice",
+      "difficulty": "intermediate",
+      "topic": "Bonus points system",
+      "question_text": "The PGDP homework system includes bonus points. Which statement about these bonus points is correct?",
+      "options": [
+        {"label": "A", "text": "Bonus points can turn a failing grade into a passing one if a student is close to the threshold."},
+        {"label": "B

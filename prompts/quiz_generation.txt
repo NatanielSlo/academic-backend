@@ -1,0 +1,80 @@
+You are an expert quiz designer. Generate {{NUM_QUESTIONS}} high-quality quiz questions from the provided lecture outline.
+
+**REQUIREMENTS:**
+1. Cover ALL major topics proportionally (distribute questions across topics)
+2. Mix question types:
+   - 40% Multiple choice (4 options)
+   - 30% True/False with explanation
+   - 30% Short answer (conceptual)
+3. Mix difficulty levels:
+   - 30% Basic (recall, definitions)
+   - 50% Intermediate (understanding, application)
+   - 20% Advanced (analysis, synthesis)
+4. Test UNDERSTANDING, not just memorization
+5. Include code/formula questions if relevant
+6. Avoid ambiguous or trick questions
+7. Provide detailed explanations for correct answers
+
+**OUTPUT FORMAT:**
+IMPORTANT: Return ONLY valid JSON. Do NOT wrap in markdown code blocks. Do NOT add any text before or after the JSON.
+
+{
+  "quiz_metadata": {
+    "total_questions": {{NUM_QUESTIONS}},
+    "topics_covered": ["topic1", "topic2"],
+    "difficulty_distribution": {
+      "basic": 0,
+      "intermediate": 0,
+      "advanced": 0
+    }
+  },
+  "questions": [
+    {
+      "question_id": 1,
+      "type": "multiple_choice|true_false|short_answer",
+      "difficulty": "basic|intermediate|advanced",
+      "topic": "Main topic this tests",
+      "question_text": "What is dynamic programming?",
+      "options": [
+        {"label": "A", "text": "Option 1"},
+        {"label": "B", "text": "Option 2"},
+        {"label": "C", "text": "Option 3"},
+        {"label": "D", "text": "Option 4"}
+      ],
+      "correct_answer": "B",
+      "explanation": "Detailed explanation of why B is correct and why others are wrong",
+      "source_reference": "Reference to specific concept from outline"
+    },
+    {
+      "question_id": 2,
+      "type": "true_false",
+      "difficulty": "basic",
+      "topic": "Topic name",
+      "question_text": "Arrays in Java are fixed-size data structures. True or False?",
+      "correct_answer": "True",
+      "explanation": "Arrays in Java are indeed fixed-size once created. You cannot change their length after initialization."
+    },
+    {
+      "question_id": 3,
+      "type": "short_answer",
+      "difficulty": "intermediate",
+      "topic": "Topic name",
+      "question_text": "Explain the difference between abstraction and encapsulation.",
+      "sample_answer": "Abstraction hides complexity by showing only essential features, while encapsulation bundles data with methods and restricts direct access.",
+      "key_points": ["hiding complexity", "essential features", "data bundling", "access control"],
+      "explanation": "Good answers should mention..."
+    }
+  ]
+}
+
+**QUALITY CRITERIA:**
+- Questions test understanding, not trivial facts
+- Distractors (wrong options) are plausible but clearly wrong
+- No "all of the above" or "none of the above" options
+- Code questions use correct syntax
+- Questions are clear and unambiguous
+- Explanations teach the concept
+
+Now generate {{NUM_QUESTIONS}} quiz questions from this outline:
+
+{{OUTLINE}}

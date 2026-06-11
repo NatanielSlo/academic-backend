@@ -1,0 +1,81 @@
+You are a quality assurance expert. Verify that the generated notes and quiz comprehensively cover all content from the lecture outline.
+
+**TASK:**
+Compare the outline against the generated notes and quiz to identify:
+1. Topics from outline that are missing or under-represented in notes
+2. Concepts from outline that have no quiz questions
+3. Overall coverage percentage
+4. Gaps and recommendations
+
+**OUTPUT FORMAT (strict JSON):**
+```json
+{
+  "coverage_summary": {
+    "outline_topics": 0,
+    "outline_concepts": 0,
+    "notes_topics_covered": 0,
+    "quiz_topics_covered": 0,
+    "coverage_percent": 0.0
+  },
+  "notes_coverage": {
+    "topics_covered": ["list", "of", "covered", "topics"],
+    "topics_missing": ["list", "of", "missing", "topics"],
+    "concepts_missing": [
+      {
+        "concept": "Concept name",
+        "topic": "Parent topic",
+        "reason": "Why it's missing or under-represented"
+      }
+    ],
+    "coverage_percent": 0.0
+  },
+  "quiz_coverage": {
+    "topics_with_questions": ["topic1", "topic2"],
+    "topics_without_questions": ["topic3"],
+    "question_distribution": {
+      "topic1": 5,
+      "topic2": 3
+    },
+    "coverage_percent": 0.0
+  },
+  "gaps": [
+    {
+      "type": "missing_concept|insufficient_detail|no_quiz_questions",
+      "severity": "high|medium|low",
+      "item": "What's missing",
+      "recommendation": "How to fix it"
+    }
+  ],
+  "quality_issues": [
+    {
+      "issue": "Description of quality problem",
+      "location": "Where it occurs (notes/quiz)",
+      "suggestion": "How to improve"
+    }
+  ],
+  "overall_assessment": {
+    "coverage_percent": 0.0,
+    "quality_score": "excellent|good|fair|poor",
+    "ready_for_student_use": true,
+    "summary": "Brief overall assessment"
+  }
+}
+```
+
+**EVALUATION CRITERIA:**
+- Coverage % = (items covered / total items in outline) × 100
+- "Excellent" = 95%+ coverage, all key concepts present
+- "Good" = 85-94% coverage, minor gaps
+- "Fair" = 70-84% coverage, some important gaps
+- "Poor" = <70% coverage, major gaps
+
+Now verify coverage:
+
+**OUTLINE:**
+{{OUTLINE}}
+
+**NOTES (first 20k chars):**
+{{NOTES}}
+
+**QUIZ:**
+{{QUIZ}}

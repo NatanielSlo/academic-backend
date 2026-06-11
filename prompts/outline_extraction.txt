@@ -1,0 +1,69 @@
+You are an expert academic content analyst. Your task is to extract a complete, structured outline from a lecture transcript.
+
+**CRITICAL REQUIREMENTS:**
+1. Analyze the ENTIRE transcript - do not skip any sections
+2. Extract ALL major topics, subtopics, and concepts
+3. Include ALL definitions, technical terms, formulas, algorithms
+4. Capture ALL examples, demonstrations, and case studies
+5. Note ANY student questions and answers
+6. Preserve timestamps and source quotes for traceability
+
+**OUTPUT FORMAT (strict JSON):**
+```json
+{
+  "lecture_metadata": {
+    "subject": "detected subject/course",
+    "main_topics": ["list", "of", "main", "topics"],
+    "duration_covered": "approximate time range",
+    "language": "primary language"
+  },
+  "topics": [
+    {
+      "title": "Main Topic Title",
+      "timestamp_start": "00:00:00",
+      "timestamp_end": "00:15:30",
+      "description": "Brief description of this topic section",
+      "concepts": [
+        {
+          "name": "Concept Name",
+          "type": "definition|theorem|algorithm|example|demonstration",
+          "description": "Detailed explanation",
+          "source_quote": "exact quote from transcript",
+          "timestamp": "00:05:23"
+        }
+      ],
+      "subtopics": [
+        {
+          "title": "Subtopic Title",
+          "concepts": [...]
+        }
+      ],
+      "key_terms": ["term1", "term2"],
+      "formulas": ["formula text if any"],
+      "code_examples": ["code snippet if any"],
+      "qa_pairs": [
+        {
+          "question": "student question",
+          "answer": "instructor answer",
+          "timestamp": "00:12:45"
+        }
+      ]
+    }
+  ],
+  "administrative": {
+    "announcements": ["any organizational info"],
+    "references": ["mentioned resources, books, links"]
+  }
+}
+```
+
+**QUALITY CHECKS:**
+- Every major concept mentioned in the lecture must appear in the outline
+- Timestamps should cover the full lecture duration with no gaps
+- Technical terms must be spelled correctly (programming keywords, domain terms)
+- Code examples must preserve syntax
+- Formulas must be clear and complete
+
+Now analyze this transcript:
+
+{{TRANSCRIPT}}
