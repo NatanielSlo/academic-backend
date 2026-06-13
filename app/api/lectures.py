@@ -13,6 +13,38 @@ from app.services.llm import LLMService, LLMError
 
 logger = logging.getLogger(__name__)
 
+import re
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _blocks_to_segments(blocks: list) -> list:
+    """
+    Turn cleaned ~60s transcript blocks ({timestamp_seconds, text}) into finer,
+    sentence-level pseudo-segments ({start, end, text}) for the chunker.
+
+    Splitting at sentence boundaries gives the chunker enough granularity to build
+    proper overlapping chunks for embeddings, while timestamps stay at the block's
+    resolution (good enough for RAG citations).
+    """
+    segments = []
+    for i, block in enumerate(blocks):
+        text = (block.get("text") or "").strip()
+        if not text:
+            continue
+        start = block.get("timestamp_seconds", 0)
+        # End of this block ≈ start of the next block (last block: +60s).
+        if i + 1 < len(blocks):
+            end = blocks[i + 1].get("timestamp_seconds", start)
+        else:
+            end = start + 60
+        for sentence in _SENTENCE_SPLIT.split(text):
+            sentence = sentence.strip()
+            if sentence:
+                segments.append({"start": start, "end": end, "text": sentence})
+    return segments
+
+
 router = APIRouter(prefix="/api/lectures", tags=["lectures"])
 
 # Initialize services
@@ -36,25 +68,57 @@ def process_lecture_background(lecture_id: str, url: str):
     try:
         # ==================== STEP 1: Download Audio ====================
         logger.info(f"[{lecture_id}] Step 1/5: Downloading audio")
-        db.update_lecture_status(lecture_id, "downloading", progress_percent=10)
+        db.update_lecture_status(
+            lecture_id, "downloading", progress_percent=10,
+            progress_message="Rozpoczynanie pobierania…"
+        )
 
-        audio_path = audio_extractor.extract_audio(url, lecture_id)
+        def on_download(pct: float, phase: str):
+            # Map download 0-100% into overall 10-24%; conversion sits at 24%.
+            if phase == "converting":
+                db.update_lecture_status(
+                    lecture_id, "downloading", progress_percent=24,
+                    progress_message="Konwersja do MP3…"
+                )
+            else:
+                overall = 10 + int(pct * 0.14)
+                db.update_lecture_status(
+                    lecture_id, "downloading", progress_percent=overall,
+                    progress_message=f"Pobieranie audio: {int(pct)}%"
+                )
+
+        audio_path = audio_extractor.extract_audio(url, lecture_id, progress_callback=on_download)
         db.update_lecture_audio_path(lecture_id, str(audio_path))
 
         logger.info(f"[{lecture_id}] Audio downloaded: {audio_path}")
-        db.update_lecture_status(lecture_id, "downloading", progress_percent=20)
+        db.update_lecture_status(
+            lecture_id, "downloading", progress_percent=25,
+            progress_message="Audio pobrane"
+        )
 
         # ==================== STEP 2: Transcribe Audio ====================
         logger.info(f"[{lecture_id}] Step 2/6: Transcribing audio")
-        db.update_lecture_status(lecture_id, "transcribing", progress_percent=25)
+        db.update_lecture_status(
+            lecture_id, "transcribing", progress_percent=25,
+            progress_message="Transkrypcja audio…"
+        )
 
         # Use language from config (e.g., "de" for German lectures)
         from app.config import config
         language = config.transcription.language
 
+        def on_transcribe_chunk(done: int, total: int):
+            # Whisper processes the audio in ~10-min chunks; map to overall 25-48%.
+            overall = 25 + int((done / total) * 23)
+            db.update_lecture_status(
+                lecture_id, "transcribing", progress_percent=overall,
+                progress_message=f"Transkrypcja: część {done}/{total}"
+            )
+
         transcript_result = transcription_service.transcribe(
             audio_path,
-            language=language
+            language=language,
+            chunk_callback=on_transcribe_chunk
         )
 
         # Format transcript for storage (with timestamps every ~60 seconds)
@@ -67,48 +131,98 @@ def process_lecture_background(lecture_id: str, url: str):
         db.save_transcript(lecture_id, formatted_transcript)
 
         logger.info(f"[{lecture_id}] Transcription completed: {len(transcript_result['segments'])} segments")
-        db.update_lecture_status(lecture_id, "transcribing", progress_percent=50)
-
-        # ==================== STEP 3: Chunk Transcript ====================
-        logger.info(f"[{lecture_id}] Step 3/6: Chunking transcript")
-        db.update_lecture_status(lecture_id, "embedding", progress_percent=55)
-
-        chunks = chunker.chunk_transcript(transcript_result["segments"])
-
-        logger.info(f"[{lecture_id}] Created {len(chunks)} chunks")
-        db.update_lecture_status(lecture_id, "embedding", progress_percent=60)
-
-        # ==================== STEP 4: Clean Chunks with LLM ====================
-        logger.info(f"[{lecture_id}] Step 4/6: Cleaning chunks with LLM")
-
-        cleaned_chunks = llm_service.clean_transcript_chunks(
-            chunks,
-            text_key="text",
-            show_progress=True
+        db.update_lecture_status(
+            lecture_id, "transcribing", progress_percent=50,
+            progress_message="Transkrypcja zakończona"
         )
 
-        logger.info(f"[{lecture_id}] Cleaned {len(cleaned_chunks)} chunks")
-        db.update_lecture_status(lecture_id, "embedding", progress_percent=70)
+        # ==================== STEP 3: Clean Transcript with LLM ====================
+        # Clean ONCE over the ~60s timestamped blocks (non-overlapping), then reuse the
+        # result for both content generation/display and embeddings. Cleaning here (not
+        # on overlapping chunks) avoids re-processing overlap regions and yields a clean
+        # full transcript we can persist.
+        logger.info(f"[{lecture_id}] Step 3/6: Cleaning transcript with LLM")
+        db.update_lecture_status(
+            lecture_id, "embedding", progress_percent=55,
+            progress_message="Czyszczenie transkryptu…"
+        )
+
+        # Throttle DB writes to ~20 updates regardless of block count.
+        clean_total = max(1, len(formatted_transcript))
+        clean_step = max(1, clean_total // 20)
+
+        def on_clean(done: int, total: int):
+            if done != total and done % clean_step != 0:
+                return
+            overall = 55 + int((done / total) * 10)  # 55..65
+            db.update_lecture_status(
+                lecture_id, "embedding", progress_percent=overall,
+                progress_message=f"Czyszczenie transkryptu: {done}/{total} bloków"
+            )
+
+        cleaned_transcript = llm_service.clean_transcript_chunks(
+            formatted_transcript,
+            text_key="text",
+            show_progress=True,
+            progress_callback=on_clean
+        )
+        db.save_cleaned_transcript(lecture_id, cleaned_transcript)
+
+        logger.info(f"[{lecture_id}] Cleaned transcript ({len(cleaned_transcript)} blocks)")
+        db.update_lecture_status(
+            lecture_id, "embedding", progress_percent=65,
+            progress_message="Transkrypt wyczyszczony"
+        )
+
+        # ==================== STEP 4: Chunk Cleaned Transcript ====================
+        logger.info(f"[{lecture_id}] Step 4/6: Chunking cleaned transcript")
+
+        pseudo_segments = _blocks_to_segments(cleaned_transcript)
+        chunks = chunker.chunk_transcript(pseudo_segments)
+
+        logger.info(f"[{lecture_id}] Created {len(chunks)} chunks from cleaned transcript")
+        db.update_lecture_status(
+            lecture_id, "embedding", progress_percent=70,
+            progress_message=f"Podzielono na {len(chunks)} fragmentów"
+        )
 
         # ==================== STEP 5: Generate Embeddings ====================
         logger.info(f"[{lecture_id}] Step 5/6: Generating embeddings")
 
+        def on_embed(batch: int, total: int):
+            overall = 70 + int((batch / total) * 20)  # 70..90
+            db.update_lecture_status(
+                lecture_id, "embedding", progress_percent=overall,
+                progress_message=f"Generowanie embeddingów: batch {batch}/{total}"
+            )
+
         chunks_with_embeddings = embedding_service.embed_chunks(
-            cleaned_chunks,
+            chunks,
             text_key="text",
-            show_progress=True
+            show_progress=True,
+            progress_callback=on_embed
         )
 
         logger.info(f"[{lecture_id}] Generated {len(chunks_with_embeddings)} embeddings")
-        db.update_lecture_status(lecture_id, "embedding", progress_percent=90)
+        db.update_lecture_status(
+            lecture_id, "embedding", progress_percent=90,
+            progress_message="Embeddingi wygenerowane"
+        )
 
         # ==================== STEP 6: Save to Database ====================
         logger.info(f"[{lecture_id}] Step 6/6: Saving chunks to database")
+        db.update_lecture_status(
+            lecture_id, "embedding", progress_percent=95,
+            progress_message="Zapisywanie do bazy…"
+        )
 
         db.save_chunks(lecture_id, chunks_with_embeddings)
 
         logger.info(f"[{lecture_id}] Saved {len(chunks_with_embeddings)} chunks to database")
-        db.update_lecture_status(lecture_id, "completed", progress_percent=100)
+        db.update_lecture_status(
+            lecture_id, "completed", progress_percent=100,
+            progress_message="Gotowe"
+        )
 
         logger.info(f"[{lecture_id}] ✓ Processing completed successfully!")
 
@@ -193,6 +307,7 @@ async def get_lecture_status(lecture_id: str):
             "lecture_id": lecture_id,
             "status": lecture["status"],
             "progress_percent": lecture["progress_percent"],
+            "progress_message": lecture.get("progress_message"),
             "error_message": lecture["error_message"]
         }
 
@@ -241,7 +356,8 @@ async def get_transcript(lecture_id: str):
 
         return {
             "lecture_id": lecture_id,
-            "transcript": lecture["full_transcript"]
+            "transcript": lecture["full_transcript"],
+            "cleaned_transcript": lecture.get("cleaned_transcript"),
         }
 
     except HTTPException:

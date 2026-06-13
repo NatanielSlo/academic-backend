@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Callable, Optional
 from openai import OpenAI
 import time
 
@@ -51,7 +51,8 @@ class EmbeddingService:
     def embed_batch(
         self,
         texts: List[str],
-        show_progress: bool = True
+        show_progress: bool = True,
+        progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> List[List[float]]:
         """
         Generate embeddings for multiple texts in batches.
@@ -98,6 +99,9 @@ class EmbeddingService:
                 if show_progress:
                     print(" ✓")
 
+                if progress_callback:
+                    progress_callback(batch_num, total_batches)
+
                 # Rate limiting: small delay between batches
                 if i + batch_size < len(texts):
                     time.sleep(0.1)
@@ -114,7 +118,8 @@ class EmbeddingService:
         self,
         chunks: List[dict],
         text_key: str = "text",
-        show_progress: bool = True
+        show_progress: bool = True,
+        progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> List[dict]:
         """
         Generate embeddings for a list of chunk dictionaries.
@@ -150,7 +155,11 @@ class EmbeddingService:
                 print(f"{'='*60}\n")
 
             # Generate embeddings
-            embeddings = self.embed_batch(texts, show_progress=show_progress)
+            embeddings = self.embed_batch(
+                texts,
+                show_progress=show_progress,
+                progress_callback=progress_callback
+            )
 
             # Add embeddings to chunks
             for chunk, embedding in zip(chunks, embeddings):

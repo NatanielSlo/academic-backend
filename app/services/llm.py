@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from pathlib import Path
 import httpx
 import json
@@ -34,6 +34,27 @@ class LLMService:
         self.logs_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Initialized LLM service (provider={self.provider}, simple={self.simple_model}, complex={self.complex_model})")
+
+    @staticmethod
+    def _cleanup_max_tokens(text: str, attempt: int = 0) -> int:
+        """
+        Token budget for cleaning a piece of transcript.
+
+        Cleanup output is roughly the same length as the input (it only removes
+        fillers/repetitions), and tokens are always FEWER than characters, so a
+        budget around `len(text)` is generous. We give 1.5x headroom for the model
+        echoing punctuation/whitespace, a floor of 1024 so short blocks aren't
+        starved, and a ceiling of 8192 (model max output).
+
+        On retries we DOUBLE the budget per attempt: if the first pass got truncated
+        (finish_reason=length) because the model rambled, a bigger ceiling lets the
+        second attempt finish instead of failing again and falling back to raw text.
+
+        Previously this passed `len(text) * 2` as max_tokens, which conflated chars
+        with tokens and starved short chunks (16 chars -> 32 tokens).
+        """
+        base = max(1024, int(len(text) * 1.5))
+        return min(base * (2 ** attempt), 8192)
 
     def _load_prompt(self, prompt_file: str) -> str:
         """Load prompt template from file."""
@@ -221,7 +242,7 @@ class LLMService:
                 prompt=full_prompt,
                 model="simple",  # Use fast model for cleanup
                 temperature=0.1,  # Low temperature for consistency
-                max_tokens=len(raw_transcript) * 2  # Allow some expansion
+                max_tokens=self._cleanup_max_tokens(raw_transcript)
             )
 
             if show_progress:
@@ -239,7 +260,8 @@ class LLMService:
         chunks: List[Dict[str, Any]],
         text_key: str = "text",
         show_progress: bool = True,
-        max_workers: int = 5
+        max_workers: int = 5,
+        progress_callback: Optional[Callable[[int, int], None]] = None
     ) -> List[Dict[str, Any]]:
         """
         Clean transcript chunks with parallel processing.
@@ -251,6 +273,8 @@ class LLMService:
             text_key: Key containing the text to clean
             show_progress: Whether to print progress
             max_workers: Number of parallel workers (default: 5)
+            progress_callback: Optional callback(completed, total) invoked each time
+                a chunk finishes, for surfacing fine-grained progress to the UI.
 
         Returns:
             Chunks with cleaned text (in original order)
@@ -299,7 +323,9 @@ class LLMService:
                             prompt=full_prompt,
                             model="simple",
                             temperature=0.1,
-                            max_tokens=len(raw_text) * 2,
+                            # Escalate the token budget on each retry so a chunk that
+                            # got truncated on attempt 1 gets more room on attempt 2.
+                            max_tokens=self._cleanup_max_tokens(raw_text, attempt=attempt),
                             log_id=i if attempt == 0 else None  # Log only first attempt
                         ).strip()
 
@@ -344,6 +370,9 @@ class LLMService:
                     i, cleaned_chunk = future.result()
                     cleaned_chunks_dict[i] = cleaned_chunk
                     completed += 1
+
+                    if progress_callback:
+                        progress_callback(completed, len(chunks))
 
                     if show_progress:
                         elapsed = time.time() - start_time

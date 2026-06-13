@@ -167,12 +167,21 @@ class ContentGenerator:
         return len(text) // 4
 
     def get_transcript_text(self, lecture_id: str) -> str:
-        """Fetch a lecture's transcript and flatten it to plain text."""
+        """
+        Fetch a lecture's transcript and flatten it to plain text.
+
+        Prefers the LLM-cleaned transcript (filler/ASR noise removed) so notes/quiz/
+        outline are built from clean text; falls back to the raw transcript if a lecture
+        was ingested before cleaning was wired in.
+        """
         lecture = self.db.get_lecture(lecture_id)
-        if not lecture or not lecture.get('full_transcript'):
+        if not lecture:
+            raise ContentGeneratorError(f"No lecture found for {lecture_id}")
+
+        transcript_data = lecture.get('cleaned_transcript') or lecture.get('full_transcript')
+        if not transcript_data:
             raise ContentGeneratorError(f"No transcript found for lecture {lecture_id}")
 
-        transcript_data = lecture['full_transcript']
         if isinstance(transcript_data, str):
             transcript_data = json.loads(transcript_data)
 

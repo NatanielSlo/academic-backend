@@ -56,7 +56,8 @@ class TranscriptionService:
         self,
         audio_path: Path,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        chunk_callback: Optional[Callable[[int, int], None]] = None
     ) -> Dict[str, Any]:
         """
         Transcribe audio file using OpenAI Whisper API with chunking for large files.
@@ -93,7 +94,7 @@ class TranscriptionService:
             # Check if we need to chunk the file
             if file_size_mb > max_size:
                 print(f"[INFO] File exceeds {max_size} MB limit, splitting into chunks...")
-                result = self._transcribe_chunks(audio_path, progress_callback, language)
+                result = self._transcribe_chunks(audio_path, progress_callback, language, chunk_callback)
             else:
                 print(f"[INFO] Uploading to {self.provider.upper()} Whisper API...")
                 transcript = self._upload_with_progress(
@@ -290,7 +291,8 @@ class TranscriptionService:
         self,
         audio_path: Path,
         progress_callback: Optional[Callable[[int, int], None]] = None,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        chunk_callback: Optional[Callable[[int, int], None]] = None
     ) -> Dict[str, Any]:
         """
         Transcribe large audio file by splitting into chunks.
@@ -366,6 +368,9 @@ class TranscriptionService:
                 time_offset += transcript.duration
 
                 print(f"  ✓ Chunk {i+1} completed ({len(transcript.segments)} segments)")
+
+                if chunk_callback:
+                    chunk_callback(i + 1, len(chunk_paths))
 
             # Combine results
             result = {

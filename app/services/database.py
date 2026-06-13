@@ -107,30 +107,37 @@ class DatabaseService:
         lecture_id: str,
         status: str,
         progress_percent: Optional[int] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
+        progress_message: Optional[str] = None
     ):
-        """Update lecture processing status."""
+        """
+        Update lecture processing status.
+
+        Only the columns whose arguments are provided get written, so a fine-grained
+        progress tick (status + progress_percent + progress_message) doesn't clobber
+        a previously-set error_message, and vice versa.
+        """
         conn = self._get_conn()
         try:
+            sets = ["status = %s"]
+            params: list = [status]
+
+            if progress_percent is not None:
+                sets.append("progress_percent = %s")
+                params.append(progress_percent)
+            if progress_message is not None:
+                sets.append("progress_message = %s")
+                params.append(progress_message)
+            if error_message is not None:
+                sets.append("error_message = %s")
+                params.append(error_message)
+
+            params.append(lecture_id)
             with conn.cursor() as cur:
-                if progress_percent is not None:
-                    cur.execute(
-                        """
-                        UPDATE lectures
-                        SET status = %s, progress_percent = %s, error_message = %s
-                        WHERE id = %s
-                        """,
-                        (status, progress_percent, error_message, lecture_id)
-                    )
-                else:
-                    cur.execute(
-                        """
-                        UPDATE lectures
-                        SET status = %s, error_message = %s
-                        WHERE id = %s
-                        """,
-                        (status, error_message, lecture_id)
-                    )
+                cur.execute(
+                    f"UPDATE lectures SET {', '.join(sets)} WHERE id = %s",
+                    params
+                )
                 conn.commit()
                 logger.info(f"Updated lecture {lecture_id} status to {status}")
         except Exception as e:
@@ -181,6 +188,30 @@ class DatabaseService:
         finally:
             self._put_conn(conn)
 
+    def save_cleaned_transcript(self, lecture_id: str, transcript: List[Dict[str, Any]]):
+        """
+        Save the LLM-cleaned transcript for a lecture.
+
+        Args:
+            lecture_id: The lecture ID
+            transcript: List of {timestamp, timestamp_seconds, text} dicts (cleaned)
+        """
+        conn = self._get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE lectures SET cleaned_transcript = %s WHERE id = %s",
+                    (Json(transcript), lecture_id)
+                )
+                conn.commit()
+                logger.info(f"Saved cleaned transcript for lecture {lecture_id} ({len(transcript)} segments)")
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Failed to save cleaned transcript: {e}")
+            raise DatabaseError(f"Failed to save cleaned transcript: {e}")
+        finally:
+            self._put_conn(conn)
+
     def get_lecture(self, lecture_id: str) -> Optional[Dict[str, Any]]:
         """Get lecture by ID."""
         conn = self._get_conn()
@@ -189,8 +220,8 @@ class DatabaseService:
                 cur.execute(
                     """
                     SELECT id, url, course_name, lecture_number, date,
-                           status, progress_percent, error_message,
-                           full_transcript, audio_path, created_at, updated_at
+                           status, progress_percent, error_message, progress_message,
+                           full_transcript, cleaned_transcript, audio_path, created_at, updated_at
                     FROM lectures
                     WHERE id = %s
                     """,
