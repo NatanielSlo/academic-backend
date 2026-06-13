@@ -1,270 +1,188 @@
-# AI Academic Assistant - Backend
+# Lecture Intelligence — Backend
 
-FastAPI backend for processing lecture recordings and generating comprehensive study materials.
+> Turn a raw university lecture recording into a searchable knowledge base, German study notes, and an interactive quiz — automatically.
 
-## Features
+A production-style **FastAPI** backend that ingests lecture videos, transcribes and cleans them, embeds them for semantic search, and runs a multi-pass LLM pipeline to generate structured study materials. Built around a **RAG Q&A** engine and a cost-conscious, multi-model LLM architecture.
 
-### 🎥 Lecture Processing
-- Extract audio from lecture URLs (yt-dlp)
-- Transcribe with OpenAI Whisper
-- Chunk and embed for RAG search
-- Store in PostgreSQL with pgvector
+---
 
-### 💬 RAG Q&A
-- Ask questions about lectures
-- Vector similarity search
-- Context-aware responses via DeepSeek
-- Source citations with timestamps
+## What it does
 
-### 📚 **Content Generation (NEW!)**
-- **Structured Outline**: Extract all topics, concepts, definitions
-- **Detailed Notes**: Comprehensive Markdown study notes
-- **Comprehensive Quiz**: 20+ questions, mixed types, all difficulty levels
-- **Coverage Verification**: Automatic quality check & gap detection
+Give it a lecture URL and it runs the full pipeline end to end:
 
-## Tech Stack
-
-- **Framework**: FastAPI
-- **Database**: PostgreSQL + pgvector
-- **LLM**: DeepSeek API (v4-flash, v4-pro)
-- **Transcription**: OpenAI Whisper API
-- **Embeddings**: OpenAI text-embedding-3-small
-
-## Quick Start
-
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
+```
+URL ─▶ download audio ─▶ transcribe ─▶ LLM cleanup ─▶ chunk ─▶ embed ─▶ pgvector
+                                                                          │
+                                  ┌───────────────────────────────────────┘
+                                  ▼
+        RAG Q&A   +   Outline ─▶ Notes (DE) + Quiz   ─▶ Coverage check
+                                     │
+                                     └─▶ Translate notes (DE → PL / EN)
 ```
 
-### 2. Configure
-Copy `.env.example` to `.env` and set:
-```
-DEEPSEEK_API_KEY=your_key
-OPENAI_API_KEY=your_key
-DATABASE_URL=postgresql://...
-```
+- **🎥 Ingestion** — pulls audio with `yt-dlp`, transcribes via Whisper (Groq/OpenAI), then an LLM removes filler/ASR noise. Every step streams **fine-grained progress** back to the client (download %, transcription chunk, cleanup block, embedding batch).
+- **💬 RAG Q&A** — vector search over lecture chunks with query rewriting, scope filtering (global / course / single lecture), and answers with **timestamped source citations**.
+- **📚 Study material generation** — a **3-pass pipeline** (outline → notes + quiz in parallel → coverage verification) produces German Markdown notes and a mixed-type quiz.
+- **🌍 Translation** — one-click translation of notes from German to Polish or English, on the cheaper model.
+- **✅ Quizzes** — multiple-choice, true/false, and open-ended questions; attempts (including learner self-grades for open-ended answers) are persisted for progress tracking.
 
-### 3. Run Migrations
-```bash
-python run_migration.py
-```
+---
 
-### 4. Start Server
-```bash
-uvicorn app.main:app --reload
-```
+## Engineering highlights
 
-API available at `http://localhost:8000`
+The parts that were actually hard, and what I did about them:
 
-### 5. Test Content Generation
-```bash
-python test_content_generation.py
-```
+| Challenge | Approach |
+|-----------|----------|
+| **LLM output truncation** | Token-budget engineering that distinguishes *characters* from *tokens*, escalates the budget on retry, and is **language-aware** (Polish tokenizes ~1 token/char, so translation gets a bigger budget). |
+| **Unparseable JSON from LLMs** | Layered recovery: direct parse → strip code fences → `json-repair` → custom brace/string balancer that reconstructs truncated objects. |
+| **Long-running, opaque jobs** | Progress callbacks threaded through every service so the API surfaces a constantly-moving, human-readable status instead of a frozen spinner. |
+| **Latency on large lectures** | `ThreadPoolExecutor` parallelism for transcript cleanup, per-topic note/quiz generation, and per-block translation — each call kept small enough to never hit the output cap. |
+| **API cost** | **Two-model strategy** — the cheap/fast model (`deepseek-v4-flash`) for cleanup, Q&A and translation; the stronger model (`deepseek-v4-pro`) only for outline/notes/quiz synthesis. |
+| **Generation quality** | A dedicated **coverage-verification pass** scores how completely the notes/quiz cover the source outline and flags gaps. |
 
-## Documentation
+---
 
-📖 **Start here:**
-- **[QUICKSTART.md](QUICKSTART.md)** - Get running in 5 minutes
-- **[BACKEND_SPEC.md](BACKEND_SPEC.md)** - Complete system specification
+## Tech stack
 
-📚 **Content Generation:**
-- **[CONTENT_GENERATION.md](CONTENT_GENERATION.md)** - Technical documentation
-- **[USAGE_EXAMPLE.md](USAGE_EXAMPLE.md)** - Code examples & workflows
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - What was built
-- **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)** - Pre-launch checks
+- **API:** FastAPI + Pydantic, background tasks for async generation
+- **Database:** PostgreSQL + `pgvector` (Supabase), `vector(1536)` embeddings
+- **LLM:** DeepSeek (`v4-flash` / `v4-pro`) via a thin typed client
+- **Transcription:** Whisper — Groq `whisper-large-v3-turbo` (default) or OpenAI `whisper-1`
+- **Embeddings:** OpenAI `text-embedding-3-small`
+- **Audio:** `yt-dlp` (domain-allowlisted)
+- **Config:** YAML with `${ENV_VAR}` substitution
 
-## API Overview
+---
 
-### Lecture Processing
-```http
-POST   /api/lectures              # Submit lecture URL
-GET    /api/lectures              # List all lectures
-GET    /api/lectures/{id}/status  # Check processing status
-GET    /api/lectures/{id}/transcript  # Get transcript
-```
-
-### Q&A
-```http
-POST   /api/chat                  # Ask questions (RAG)
-```
-
-### Content Generation
-```http
-POST   /api/content/lectures/{id}/generate           # Start generation
-GET    /api/content/lectures/{id}/generation-status  # Poll progress
-GET    /api/content/lectures/{id}/outline            # Get outline
-GET    /api/content/lectures/{id}/notes              # Get notes
-GET    /api/content/lectures/{id}/comprehensive-quiz # Get quiz
-GET    /api/content/lectures/{id}/coverage-report    # Get quality report
-GET    /api/content/lectures/{id}/all-materials      # Get everything
-```
-
-Full API docs: `http://localhost:8000/docs` (auto-generated)
-
-## Project Structure
+## Architecture
 
 ```
 backend/
 ├── app/
-│   ├── api/              # API endpoints
-│   │   ├── lectures.py   # Lecture processing
-│   │   ├── chat.py       # RAG Q&A
-│   │   └── content.py    # Content generation (NEW)
-│   ├── models/           # Pydantic models
-│   │   ├── lecture.py
-│   │   ├── chat.py
-│   │   └── content.py    # (NEW)
-│   ├── services/         # Business logic
-│   │   ├── llm.py        # LLM client
-│   │   ├── rag.py        # RAG search
-│   │   ├── content_generator.py  # (NEW)
-│   │   └── ...
-│   ├── config.py         # Configuration
-│   └── main.py           # FastAPI app
-├── prompts/              # LLM prompts (NEW)
-│   ├── outline_extraction.txt
-│   ├── notes_generation.txt
-│   ├── quiz_generation.txt
-│   └── coverage_verification.txt
-├── migrations/           # Database migrations
-├── logs/                 # Generated files
-└── tests/                # Test scripts
+│   ├── api/
+│   │   ├── lectures.py     # ingestion: submit, status, transcript
+│   │   ├── chat.py         # RAG Q&A
+│   │   └── content.py      # notes, quizzes, translation, attempts
+│   ├── services/
+│   │   ├── audio_extractor.py   # yt-dlp + MP3 extraction (+progress)
+│   │   ├── transcription.py     # Whisper, 10-min chunking
+│   │   ├── llm.py               # DeepSeek client + transcript cleanup
+│   │   ├── embeddings.py        # batched OpenAI embeddings
+│   │   ├── rag.py               # retrieval + answer synthesis
+│   │   ├── content_generator.py # 3-pass generation + translation
+│   │   └── database.py          # psycopg2 pool, all SQL
+│   ├── models/             # Pydantic request/response schemas
+│   ├── config.py           # YAML + env config loader
+│   └── main.py             # app + routers + health checks
+├── prompts/                # versioned LLM prompt templates
+└── migrations/             # ordered SQL migrations
 ```
 
-## Content Generation Pipeline
+### The content-generation pipeline
 
 ```
-                    Lecture Transcript
-                            ↓
-              ┌─────────────────────────┐
-              │   PASS 1: Outline       │
-              │   Extract structure     │
-              └─────────────────────────┘
-                            ↓
-              ┌──────────────┬──────────────┐
-              ↓              ↓              ↓
-         ┌────────┐    ┌────────┐    ┌────────┐
-         │ Notes  │    │  Quiz  │    │ Verify │
-         │ Pass2a │    │ Pass2b │    │ Pass3  │
-         └────────┘    └────────┘    └────────┘
-              │              │              │
-              └──────────────┴──────────────┘
-                            ↓
-                  Complete Study Materials
+                 Cleaned transcript
+                        │
+              Pass 1 ── Outline (deepseek-v4-pro)
+                        │  structured topics, concepts, formulas
+            ┌───────────┴───────────┐
+       Pass 2a                   Pass 2b
+       Notes (DE)                Quiz                  ← run in parallel,
+       per-topic, parallel       per-topic, parallel     one LLM call per topic
+            └───────────┬───────────┘
+                     Pass 3
+              Coverage verification (cheap model)
+                        │
+              Persisted study materials
 ```
-
-**Output:**
-- Structured JSON outline
-- Markdown notes (10-20 pages)
-- 20+ quiz questions
-- Coverage report (95%+ quality)
-
-**Cost:** ~$0.30 per 110-minute lecture
-
-**Time:** 2-3 minutes
-
-## Database Schema
-
-### Core Tables
-- `lectures` - Lecture metadata
-- `lecture_chunks` - Embedded text chunks for RAG
-
-### Content Generation Tables (NEW)
-- `lecture_outlines` - Structured outlines
-- `lecture_notes` - Markdown notes
-- `comprehensive_quizzes` - Quiz questions
-- `coverage_reports` - Quality reports
-- `content_generation_status` - Async tracking
-
-## Development
-
-### Run Tests
-```bash
-# Test content generation
-python test_content_generation.py
-
-# Test RAG search
-python app/tests/test_rag.py
-
-# Check database
-python app/tests/check_database.py
-```
-
-### Add Migrations
-1. Create `migrations/XXX_description.sql`
-2. Run `python run_migration.py`
-
-### Adjust Prompts
-Edit files in `prompts/` and regenerate to see improvements.
-
-### View Logs
-```bash
-# LLM interactions
-ls logs/llm/
-
-# Content generation
-ls logs/content_generation/
-```
-
-## Cost Estimates
-
-**Per 110-minute lecture:**
-- Audio extraction: Free (yt-dlp)
-- Transcription: ~$0.54 (Whisper)
-- Embedding: ~$0.001 (negligible)
-- Content generation: ~$0.30 (DeepSeek)
-- **Total: ~$0.84 per lecture**
-
-**Q&A:** ~$0.0001 per question (DeepSeek v4-flash)
-
-## Deployment
-
-### Local Development
-See above (Quick Start)
-
-### Production (Render)
-1. Create PostgreSQL addon
-2. Set environment variables
-3. Deploy service
-4. Run migrations: `python run_migration.py`
-5. Check: `GET /health`
-
-Full checklist: **[DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md)**
-
-## Troubleshooting
-
-**Common issues:**
-
-1. **"No transcript found"**
-   - Lecture not processed yet
-   - Process via `/api/lectures` first
-
-2. **"DeepSeek API error: 401"**
-   - Check `DEEPSEEK_API_KEY` in `.env`
-
-3. **"Migration already run"**
-   - Tables already exist, skip migration
-
-4. **"Generation failed"**
-   - Check logs: `logs/content_generation/`
-   - Review error in `content_generation_status` table
-
-See individual docs for detailed troubleshooting.
-
-## Contributing
-
-1. Follow existing code structure
-2. Add tests for new features
-3. Update documentation
-4. Run migration for schema changes
-5. Test end-to-end before committing
-
-## Support
-
-- API Docs: `http://localhost:8000/docs`
-- Documentation: See `.md` files in this directory
 
 ---
 
-**Ready to process lectures and generate study materials!** 🚀
+## API overview
+
+```http
+# Ingestion
+POST /api/lectures                       # submit a lecture URL
+GET  /api/lectures                       # list lectures
+GET  /api/lectures/{id}/status           # live processing status + progress
+GET  /api/lectures/{id}/transcript       # transcript with timestamps
+
+# Q&A
+POST /api/chat                           # RAG answer with source citations
+
+# Study materials
+POST /api/content/lectures/{id}/generate-notes
+POST /api/content/lectures/{id}/generate-quiz
+GET  /api/content/lectures/{id}/generation-status
+GET  /api/content/lectures/{id}/notes
+POST /api/content/lectures/{id}/notes/translate     # DE → pl/en
+GET  /api/content/lectures/{id}/notes/translation
+
+# Quizzes & attempts
+GET  /api/content/lectures/{id}/comprehensive-quiz  # latest quiz
+GET  /api/content/lectures/{id}/quizzes             # all quizzes (history)
+GET  /api/content/quizzes/{quiz_id}                 # one quiz (retake)
+POST /api/content/quizzes/{quiz_id}/attempts        # save an attempt
+GET  /api/content/quizzes/{quiz_id}/attempts        # attempt history
+```
+
+Interactive, auto-generated docs at **`/docs`** (Swagger UI).
+
+---
+
+## Quick start
+
+```bash
+# 1. Install
+pip install -r requirements.txt
+
+# 2. Configure — create .env with:
+#    DEEPSEEK_API_KEY=...
+#    OPENAI_API_KEY=...
+#    GROQ_API_KEY=...
+#    DATABASE_URL=postgresql://...   # Supabase Postgres
+#    (model names, chunking, RAG knobs live in config.yaml)
+
+# 3. Apply database migrations
+python run_migration.py
+
+# 4. Run
+uvicorn app.main:app --reload        # http://localhost:8000
+```
+
+---
+
+## Data model
+
+| Table | Purpose |
+|-------|---------|
+| `lectures` | metadata, status, progress, raw + cleaned transcript |
+| `lecture_chunks` | embedded text chunks (`vector(1536)`) for RAG |
+| `lecture_outlines` | structured outline (Pass 1) |
+| `lecture_notes` | German Markdown notes (Pass 2a) |
+| `lecture_note_translations` | translated notes, keyed by `(lecture, language)` |
+| `quizzes` / `quiz_attempts` | generated quizzes + scored attempts |
+| `coverage_reports` | quality/coverage verification (Pass 3) |
+| `content_generation_status` | async generation progress |
+
+---
+
+## Rough economics
+
+For a ~110-minute lecture (estimates):
+
+- Audio extraction — free (`yt-dlp`)
+- Transcription — the dominant cost; **Groq Whisper** is used by default to keep it low
+- Embeddings — negligible
+- Full content generation — a few cents on DeepSeek
+- **Q&A** — fractions of a cent per question on the flash model
+
+The two-model split keeps the expensive model on the work that actually needs it.
+
+---
+
+## Screenshots
+
+![Swagger API docs](docs/swagger.png)
+![Pipeline progress logs](docs/pipeline.png)
