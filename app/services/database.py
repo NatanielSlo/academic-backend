@@ -386,14 +386,16 @@ class DatabaseService:
     def create_quiz(
         self,
         lecture_id: str,
-        questions: List[Dict[str, Any]]
+        questions: Any
     ) -> str:
         """
         Create a new quiz.
 
         Args:
             lecture_id: The lecture ID
-            questions: List of question dicts
+            questions: The quiz payload stored in the JSONB `questions` column. This may be
+                a bare list of question dicts, or the full quiz object
+                ({quiz_metadata, questions, ...}); readers handle both shapes.
 
         Returns:
             quiz_id (UUID as string)

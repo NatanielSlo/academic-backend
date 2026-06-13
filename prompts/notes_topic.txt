@@ -1,45 +1,51 @@
 You are an expert academic note-taker. Generate comprehensive, detailed study notes for ONE topic of a lecture, using the structured topic data provided.
 
+**LANGUAGE (CRITICAL):**
+- Write the ENTIRE output in German (Deutsch).
+- All headings, explanations, takeaways and prose MUST be in German.
+- Keep technical terms, code, identifiers, and formulas exactly as they appear in the source (do NOT translate code or symbols). German is the language of explanation, not of the code.
+- Do NOT add an English translation.
+
 **REQUIREMENTS:**
 1. Write flowing, well-organized Markdown notes for THIS TOPIC ONLY.
 2. Expand ALL concepts with detailed explanations.
 3. Include ALL examples, code snippets, and formulas from the topic data.
 4. Use formatting: **bold** for key terms, `code` for technical terms, > blockquotes for important notes.
 5. Add ASCII/Mermaid diagrams only where they genuinely clarify.
-6. End the section with a short "Key Takeaways" bullet list for this topic.
+6. End the section with a short "Wichtigste Erkenntnisse" bullet list for this topic.
 
 **OUTPUT FORMAT (Markdown ONLY — no document title, no table of contents, no surrounding prose):**
 Start directly with a level-2 header for the topic, e.g.:
 
 ## {{TOPIC_TITLE}}
 
-### Overview
-[High-level introduction to this topic]
+### Überblick
+[Einführung auf hoher Ebene in dieses Thema]
 
-### Key Concepts
+### Kernkonzepte
 
-#### [Concept Name]
-**Definition:** [Clear definition]
+#### [Konzeptname]
+**Definition:** [Klare Definition]
 
-**Explanation:** [Detailed explanation with context]
+**Erklärung:** [Detaillierte Erklärung mit Kontext]
 
-**Example:**
+**Beispiel:**
 ```
-[Code or example if present]
+[Code oder Beispiel, falls vorhanden]
 ```
 
-> **Note:** [important caveat or common mistake, if relevant]
+> **Hinweis:** [wichtige Einschränkung oder häufiger Fehler, falls relevant]
 
-### Key Takeaways
-- [point]
-- [point]
+### Wichtigste Erkenntnisse
+- [Punkt]
+- [Punkt]
 
 **STYLE GUIDELINES:**
 - Write for a student studying for an exam: thorough but no fluff.
 - Technical accuracy is critical; preserve code syntax and formulas exactly.
 - Do NOT invent content not supported by the topic data.
-- Do NOT output anything except the Markdown for this single topic.
+- Do NOT output anything except the German Markdown for this single topic.
 
-Now generate notes for this topic:
+Now generate notes for this topic (in German):
 
 {{TOPIC}}

@@ -115,6 +115,76 @@ def safe_json_loads(text: str, *, context: str = "response") -> Dict[str, Any]:
         raise ContentGeneratorError(f"Could not parse {context} as JSON even after repair: {e}")
 
 
+def _split_note_blocks(markdown: str) -> List[str]:
+    """
+    Split notes Markdown into blocks at top-level `---` horizontal rules, ignoring any
+    `---` that appears inside a fenced code block. The per-topic notes are assembled with
+    `---` separators, so this yields roughly one section per block — small enough that each
+    translation call stays well under the output-token cap. Separators are dropped; callers
+    rejoin blocks with the same `---` rule.
+    """
+    blocks: List[str] = []
+    current: List[str] = []
+    in_fence = False
+    for line in markdown.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            current.append(line)
+            continue
+        if not in_fence and stripped == "---":
+            blocks.append("\n".join(current).strip())
+            current = []
+            continue
+        current.append(line)
+    blocks.append("\n".join(current).strip())
+    return [b for b in blocks if b]
+
+
+def _atomize_paragraphs(text: str) -> List[str]:
+    """
+    Split a block into paragraph atoms on blank lines, keeping fenced code blocks intact
+    (a code block is never split, even if it contains blank lines). Used to break an
+    oversized section into translatable pieces without cutting through code or sentences.
+    """
+    atoms: List[str] = []
+    current: List[str] = []
+    in_fence = False
+    for line in text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            current.append(line)
+            continue
+        if not in_fence and stripped == "":
+            if current:
+                atoms.append("\n".join(current))
+                current = []
+            continue
+        current.append(line)
+    if current:
+        atoms.append("\n".join(current))
+    return atoms
+
+
+def _pack_atoms(atoms: List[str], max_chars: int) -> List[str]:
+    """Greedily pack paragraph atoms into pieces no larger than max_chars (a single oversized
+    atom, e.g. a long code block, becomes its own piece rather than being split)."""
+    pieces: List[str] = []
+    buf: List[str] = []
+    size = 0
+    for atom in atoms:
+        alen = len(atom) + 2  # account for the "\n\n" join
+        if buf and size + alen > max_chars:
+            pieces.append("\n\n".join(buf))
+            buf, size = [], 0
+        buf.append(atom)
+        size += alen
+    if buf:
+        pieces.append("\n\n".join(buf))
+    return pieces
+
+
 def _distribute(total: int, buckets: int) -> List[int]:
     """Spread `total` items across `buckets` as evenly as possible (front-loaded)."""
     if buckets <= 0 or total <= 0:
@@ -324,15 +394,15 @@ class ContentGenerator:
     def _build_notes_header(self, outline: Dict[str, Any], topic_titles: List[str]) -> str:
         """Build the document title + table of contents that wraps the per-topic sections."""
         meta = outline.get("lecture_metadata", {}) or {}
-        subject = meta.get("subject") or "Lecture Notes"
+        subject = meta.get("subject") or "Vorlesungsnotizen"
         lines = [f"# {subject}", ""]
         main_topics = meta.get("main_topics")
         if main_topics:
-            lines.append(f"> **Topics:** {', '.join(str(t) for t in main_topics)}")
+            lines.append(f"> **Themen:** {', '.join(str(t) for t in main_topics)}")
             lines.append("")
         lines.append("---")
         lines.append("")
-        lines.append("## Table of Contents")
+        lines.append("## Inhaltsverzeichnis")
         for i, title in enumerate(topic_titles, 1):
             lines.append(f"{i}. {title}")
         lines.append("")
@@ -445,7 +515,7 @@ class ContentGenerator:
                     sections[idx] = section
                 except Exception as e:
                     logger.error(f"Notes for topic {i} ('{topic_titles[i]}') failed: {e}")
-                    sections[i] = f"## {topic_titles[i]}\n\n_(Notes for this topic could not be generated.)_"
+                    sections[i] = f"## {topic_titles[i]}\n\n_(Notizen für dieses Thema konnten nicht generiert werden.)_"
                 completed += 1
                 if show_progress:
                     print(f"  [notes] {completed}/{len(topics)} topics done")
@@ -453,6 +523,164 @@ class ContentGenerator:
         header = self._build_notes_header(outline, topic_titles)
         body = "\n\n---\n\n".join(sections[i] for i in range(len(topics)))
         return header + body + "\n"
+
+    # Supported translation targets: code -> language name used in the prompt.
+    TRANSLATION_LANGUAGES = {"pl": "Polish", "en": "English"}
+
+    # Accepted spellings for the target language, mapped to the canonical code.
+    _LANGUAGE_ALIASES = {
+        "pl": "pl", "polish": "pl", "polski": "pl",
+        "en": "en", "english": "en", "angielski": "en",
+    }
+
+    @classmethod
+    def normalize_language(cls, language: str) -> Optional[str]:
+        """Map a user-supplied language ('Polish', 'pl', 'angielski', ...) to 'pl'/'en', or None."""
+        if not language:
+            return None
+        return cls._LANGUAGE_ALIASES.get(language.strip().lower())
+
+    # Translate sections this size or smaller per call; larger ones get sub-split first.
+    # ~3000 chars -> well under the 8000-token output cap even at Polish token density.
+    _TRANSLATE_MAX_CHARS = 3000
+
+    @staticmethod
+    def _translate_max_tokens(text: str) -> int:
+        """
+        Token budget for translating one piece.
+
+        DeepSeek tokenizes target languages like Polish very densely (accented chars
+        ł/ś/ż/ą often cost ~1 token each), so the OUTPUT can need roughly as many tokens
+        as the source has characters — sometimes more. We therefore budget ~1.8x the char
+        count (not the < 1x that was truncating Polish), with a 2048 floor for tiny pieces
+        and the 8000 model-output ceiling. Pieces are pre-split to _TRANSLATE_MAX_CHARS so
+        this stays under the ceiling in practice.
+        """
+        return min(max(2048, int(len(text) * 1.8)), 8000)
+
+    @staticmethod
+    def _strip_wrapping_fence(text: str) -> str:
+        """Drop a code fence the model may have wrapped the whole answer in (```markdown ... ```)."""
+        first, _, rest = text.partition("\n")
+        if first.strip() in ("```", "```markdown", "```md") and text.rstrip().endswith("```"):
+            body = rest.rstrip()
+            if body.endswith("```"):
+                body = body[: -3].rstrip()
+            return body
+        return text
+
+    def translate_notes(
+        self,
+        notes_markdown: str,
+        target_language: str,
+        show_progress: bool = True,
+    ) -> str:
+        """
+        Translate already-generated (German) notes into the target language.
+
+        Splits the notes on top-level `---` rules and translates each block in parallel
+        with the cheap/fast model (`simple` = deepseek-v4-flash), then reassembles. Keeping
+        each call small avoids the output-token cap; a block that fails to translate falls
+        back to the original so the document is never lost.
+
+        Args:
+            notes_markdown: The source notes (German) as Markdown.
+            target_language: 'pl'/'polish' or 'en'/'english' (case-insensitive).
+            show_progress: Print per-block progress.
+
+        Returns:
+            Translated Markdown notes.
+
+        Raises:
+            ContentGeneratorError: If the language is unsupported or notes are empty.
+        """
+        lang_code = self.normalize_language(target_language)
+        lang_name = self.TRANSLATION_LANGUAGES.get(lang_code) if lang_code else None
+        if not lang_name:
+            raise ContentGeneratorError(
+                f"Unsupported translation language: {target_language!r} (supported: pl, en)"
+            )
+        if not notes_markdown or not notes_markdown.strip():
+            raise ContentGeneratorError("Cannot translate empty notes")
+
+        prompt_template = self._load_prompt("notes_translation.txt")
+
+        # Split into top-level blocks (on `---`), then sub-split any block that exceeds the
+        # per-call size so no single translation can approach the output-token cap. Each unit
+        # is a list of pieces; pieces of a block are rejoined with blank lines, blocks with `---`.
+        blocks = _split_note_blocks(notes_markdown) or [notes_markdown.strip()]
+        units: List[List[str]] = [
+            [block] if len(block) <= self._TRANSLATE_MAX_CHARS
+            else _pack_atoms(_atomize_paragraphs(block), self._TRANSLATE_MAX_CHARS)
+            for block in blocks
+        ]
+        # Flat job list across all pieces so every call runs in the same parallel pool.
+        jobs = [(bi, pi, piece)
+                for bi, pieces in enumerate(units)
+                for pi, piece in enumerate(pieces)]
+
+        if show_progress:
+            print(f"\n{'='*60}")
+            print(f"[TRANSLATE] {len(blocks)} blocks ({len(jobs)} pieces) -> {lang_name} ({lang_code})")
+            print(f"Model: {self.llm.simple_model}")
+            print(f"{'='*60}\n")
+
+        start_time = time.time()
+
+        def translate_piece(bi: int, pi: int, text: str) -> tuple[int, int, str]:
+            prompt = (prompt_template
+                      .replace("{{TARGET_LANGUAGE}}", lang_name)
+                      .replace("{{NOTES}}", text))
+            out, finish = self.llm.complete(
+                prompt=prompt,
+                model="simple",  # cheap/fast model for translation
+                temperature=0.2,
+                max_tokens=self._translate_max_tokens(text),
+                return_finish_reason=True,
+            )
+            # If the target language was denser than estimated and we still hit the cap,
+            # retry once at the ceiling so the piece isn't left truncated.
+            if finish == "length":
+                logger.warning(f"Translation piece ({bi},{pi}) -> {lang_code} truncated; retrying at max budget")
+                retry, _ = self.llm.complete(
+                    prompt=prompt, model="simple", temperature=0.2,
+                    max_tokens=8000, return_finish_reason=True,
+                )
+                if len(retry.strip()) > len(out.strip()):
+                    out = retry
+            out = out.strip()
+            return bi, pi, self._strip_wrapping_fence(out) or text
+
+        # results[block_index][piece_index] = translated text
+        results: Dict[int, Dict[int, str]] = {bi: {} for bi in range(len(units))}
+        completed = 0
+        with ThreadPoolExecutor(max_workers=TOPIC_WORKERS) as executor:
+            futures = {executor.submit(translate_piece, bi, pi, text): (bi, pi)
+                       for bi, pi, text in jobs}
+            for future in as_completed(futures):
+                bi, pi = futures[future]
+                try:
+                    rbi, rpi, translated = future.result()
+                    results[rbi][rpi] = translated
+                except Exception as e:
+                    logger.error(f"Translation of piece ({bi},{pi}) -> {lang_code} failed: {e}; keeping original")
+                    results[bi][pi] = units[bi][pi]
+                completed += 1
+                if show_progress:
+                    print(f"  [translate->{lang_code}] {completed}/{len(jobs)} pieces done")
+
+        block_strs = [
+            "\n\n".join(results[bi][pi] for pi in range(len(units[bi])))
+            for bi in range(len(units))
+        ]
+        translated_notes = "\n\n---\n\n".join(block_strs) + "\n"
+
+        if show_progress:
+            duration = time.time() - start_time
+            print(f"\n[TRANSLATE SUCCESS] {len(blocks)} blocks -> {lang_name} in {duration:.1f}s "
+                  f"({len(translated_notes)} chars)")
+
+        return translated_notes
 
     def pass2_generate_quiz(
         self,

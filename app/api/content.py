@@ -5,6 +5,7 @@ API endpoints for content generation (notes, quizzes, outlines).
 import logging
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from uuid import UUID
+from typing import Optional
 import json
 from datetime import datetime
 from psycopg2.extras import Json
@@ -13,7 +14,11 @@ from app.models.content import (
     ContentGenerationRequest,
     OutlineResponse,
     NotesResponse,
+    NoteTranslationRequest,
+    NoteTranslationResponse,
     QuizResponse,
+    QuizAttemptRequest,
+    QuizAttemptResponse,
     CoverageReport,
     ComprehensiveMaterialsResponse,
     MaterialsStatusResponse
@@ -101,6 +106,19 @@ def _load_outline(lecture_id: str):
         db._put_conn(conn)
 
 
+def _load_notes_markdown(lecture_id: str) -> Optional[str]:
+    """Return the stored (German) notes Markdown for a lecture, or None if not generated yet."""
+    conn = db._get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT notes_markdown FROM lecture_notes WHERE lecture_id = %s", (lecture_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row[0] if row else None
+    finally:
+        db._put_conn(conn)
+
+
 def _ensure_outline(generator: ContentGenerator, lecture_id: UUID) -> dict:
     """
     Notes and quiz both depend on the outline (Pass 1). Reuse the stored outline if
@@ -161,16 +179,11 @@ def _background_generate_quiz(lecture_id: UUID, num_questions: int):
 
         _update_generation_status(lecture_id, "generating_quiz", 60, "Generating quiz")
         quiz = generator.pass2_generate_quiz(lid, outline, num_questions=num_questions)
-        _save_artifact(
-            """
-            INSERT INTO comprehensive_quizzes (lecture_id, quiz_data, num_questions, generated_at)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (lecture_id) DO UPDATE SET
-                quiz_data = EXCLUDED.quiz_data, num_questions = EXCLUDED.num_questions,
-                generated_at = EXCLUDED.generated_at
-            """,
-            (lid, Json(quiz), len(quiz.get("questions", [])), datetime.now()),
-        )
+        # Store the full quiz (metadata + questions) as a new row in `quizzes`. Each
+        # generation adds a row, so previously generated quizzes and their attempts are
+        # preserved; the API serves the most recent one per lecture.
+        quiz_id = db.create_quiz(lid, quiz)
+        logger.info(f"Saved quiz {quiz_id} for lecture {lecture_id}")
 
         _update_generation_status(lecture_id, "completed", 100, "Quiz generated")
         logger.info(f"Successfully generated quiz for lecture {lecture_id}")
@@ -285,19 +298,137 @@ async def get_notes(lecture_id: UUID):
         db._put_conn(conn)
 
 
-@router.get("/lectures/{lecture_id}/comprehensive-quiz", response_model=QuizResponse)
-async def get_comprehensive_quiz(lecture_id: UUID):
-    """Get the comprehensive quiz for a lecture."""
+@router.post("/lectures/{lecture_id}/notes/translate", response_model=NoteTranslationResponse)
+async def translate_notes(lecture_id: UUID, request: NoteTranslationRequest):
+    """
+    Translate a lecture's German notes into Polish or English and persist the result.
+
+    Requires notes to have been generated first (POST /generate-notes). Translation uses
+    the cheap/fast DeepSeek model. Re-running overwrites the stored translation for that
+    language (UPSERT on lecture_id + language).
+    """
+    lang_code = ContentGenerator.normalize_language(request.language)
+    if not lang_code:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language {request.language!r}. Use 'pl'/'polish' or 'en'/'english'.",
+        )
+
+    german_notes = _load_notes_markdown(str(lecture_id))
+    if not german_notes:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No notes found for lecture {lecture_id}. Generate notes first.",
+        )
+
+    generator = ContentGenerator()
+    try:
+        translated = generator.translate_notes(german_notes, lang_code)
+    except ContentGeneratorError as e:
+        logger.error(f"Notes translation failed for {lecture_id} -> {lang_code}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    generated_at = datetime.now()
+    _save_artifact(
+        """
+        INSERT INTO lecture_note_translations (lecture_id, language, notes_markdown, source_language, generated_at)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (lecture_id, language) DO UPDATE SET
+            notes_markdown = EXCLUDED.notes_markdown,
+            source_language = EXCLUDED.source_language,
+            generated_at = EXCLUDED.generated_at
+        """,
+        (str(lecture_id), lang_code, translated, "de", generated_at),
+    )
+    logger.info(f"Translated notes for lecture {lecture_id} -> {lang_code}")
+
+    return NoteTranslationResponse(
+        lecture_id=lecture_id,
+        language=lang_code,
+        notes_markdown=translated,
+        generated_at=generated_at,
+    )
+
+
+@router.get("/lectures/{lecture_id}/notes/translation", response_model=NoteTranslationResponse)
+async def get_note_translation(lecture_id: UUID, language: str):
+    """Get a previously generated note translation (?language=pl or ?language=en)."""
+    lang_code = ContentGenerator.normalize_language(language)
+    if not lang_code:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language {language!r}. Use 'pl'/'polish' or 'en'/'english'.",
+        )
+
     conn = db._get_conn()
     try:
         cursor = conn.cursor()
-
         cursor.execute("""
-            SELECT quiz_data, generated_at
-            FROM comprehensive_quizzes
-            WHERE lecture_id = %s
-        """, (str(lecture_id),))
+            SELECT notes_markdown, generated_at
+            FROM lecture_note_translations
+            WHERE lecture_id = %s AND language = %s
+        """, (str(lecture_id), lang_code))
+        result = cursor.fetchone()
+        cursor.close()
 
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No {lang_code} translation found for lecture {lecture_id}. Translate notes first.",
+            )
+
+        return NoteTranslationResponse(
+            lecture_id=lecture_id,
+            language=lang_code,
+            notes_markdown=result[0],
+            generated_at=result[1],
+        )
+    finally:
+        db._put_conn(conn)
+
+
+def _unpack_quiz(stored: Any) -> tuple[list, dict]:
+    """Normalize a stored quiz `questions` column into (questions, quiz_metadata).
+
+    Handles both shapes: the full quiz object ({quiz_metadata, questions, ...}) and a
+    bare list of questions (rebuilds metadata from the questions in that case)."""
+    if isinstance(stored, str):
+        stored = json.loads(stored)
+
+    if isinstance(stored, dict):
+        questions = stored.get("questions", []) or []
+        metadata = stored.get("quiz_metadata") or {}
+    else:
+        questions = stored or []
+        metadata = {}
+
+    if not metadata:
+        difficulty = {"basic": 0, "intermediate": 0, "advanced": 0}
+        for q in questions:
+            d = q.get("difficulty")
+            if d in difficulty:
+                difficulty[d] += 1
+        metadata = {
+            "total_questions": len(questions),
+            "topics_covered": sorted({q.get("topic", "") for q in questions if q.get("topic")}),
+            "difficulty_distribution": difficulty,
+        }
+    return questions, metadata
+
+
+@router.get("/lectures/{lecture_id}/comprehensive-quiz", response_model=QuizResponse)
+async def get_comprehensive_quiz(lecture_id: UUID):
+    """Get the most recently generated quiz for a lecture (from the `quizzes` table)."""
+    conn = db._get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, questions, created_at
+            FROM quizzes
+            WHERE lecture_id = %s
+            ORDER BY created_at DESC
+            LIMIT 1
+        """, (str(lecture_id),))
         result = cursor.fetchone()
         cursor.close()
 
@@ -307,13 +438,139 @@ async def get_comprehensive_quiz(lecture_id: UUID):
                 detail=f"No quiz found for lecture {lecture_id}. Generate materials first."
             )
 
-        quiz_data = result[0] if isinstance(result[0], dict) else json.loads(result[0])
+        quiz_id, stored, created_at = result
+        questions, metadata = _unpack_quiz(stored)
 
         return QuizResponse(
             lecture_id=lecture_id,
-            quiz_metadata=quiz_data.get("quiz_metadata", {}),
-            questions=quiz_data.get("questions", []),
-            generated_at=result[1]
+            quiz_id=quiz_id,
+            quiz_metadata=metadata,
+            questions=questions,
+            generated_at=created_at,
         )
+    finally:
+        db._put_conn(conn)
+
+
+@router.post("/quizzes/{quiz_id}/attempts", response_model=QuizAttemptResponse)
+async def submit_quiz_attempt(quiz_id: UUID, attempt: QuizAttemptRequest):
+    """
+    Save a quiz attempt to `quiz_attempts`.
+
+    `score` may be fractional (open-ended questions can earn partial credit via the
+    learner's self-grade); it is rounded for the INTEGER column. The full answer map and
+    self-grades are preserved in the JSONB `answers` column for exact reconstruction.
+    """
+    if not db.get_quiz(str(quiz_id)):
+        raise HTTPException(status_code=404, detail=f"Quiz {quiz_id} not found")
+
+    if attempt.score > attempt.total:
+        raise HTTPException(status_code=400, detail="score cannot exceed total")
+
+    answers_payload = {
+        "answers": attempt.answers,
+        "self_grades": attempt.self_grades or {},
+    }
+    attempt_id = db.save_quiz_attempt(
+        quiz_id=str(quiz_id),
+        score=round(attempt.score),
+        total=attempt.total,
+        answers=answers_payload,
+    )
+
+    return QuizAttemptResponse(
+        attempt_id=attempt_id,
+        quiz_id=quiz_id,
+        score=round(attempt.score),
+        total=attempt.total,
+        submitted_at=datetime.now(),
+    )
+
+
+@router.get("/lectures/{lecture_id}/quizzes")
+async def list_lecture_quizzes(lecture_id: UUID):
+    """List all quizzes generated for a lecture (newest first), with attempt stats.
+
+    Powers the "Old Quizzes" view, where a learner can retake any previously generated
+    quiz. `best_score` is omitted when there are no attempts yet.
+    """
+    conn = db._get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT q.id, q.questions, q.created_at,
+                   COUNT(a.id) AS attempts_count,
+                   MAX(a.score) AS best_score
+            FROM quizzes q
+            LEFT JOIN quiz_attempts a ON a.quiz_id = q.id
+            WHERE q.lecture_id = %s
+            GROUP BY q.id, q.questions, q.created_at
+            ORDER BY q.created_at DESC
+        """, (str(lecture_id),))
+        rows = cursor.fetchall()
+        cursor.close()
+
+        quizzes = []
+        for row in rows:
+            questions, _ = _unpack_quiz(row[1])
+            item = {
+                "id": str(row[0]),
+                "lecture_id": str(lecture_id),
+                "created_at": row[2],
+                "questions_count": len(questions),
+                "attempts_count": row[3],
+            }
+            if row[4] is not None:
+                item["best_score"] = row[4]
+            quizzes.append(item)
+        return {"quizzes": quizzes}
+    finally:
+        db._put_conn(conn)
+
+
+@router.get("/quizzes/{quiz_id}", response_model=QuizResponse)
+async def get_quiz_by_id(quiz_id: UUID):
+    """Fetch a single quiz by id (used to retake a specific past quiz)."""
+    quiz = db.get_quiz(str(quiz_id))
+    if not quiz:
+        raise HTTPException(status_code=404, detail=f"Quiz {quiz_id} not found")
+
+    questions, metadata = _unpack_quiz(quiz["questions"])
+    return QuizResponse(
+        lecture_id=quiz["lecture_id"],
+        quiz_id=quiz["id"],
+        quiz_metadata=metadata,
+        questions=questions,
+        generated_at=quiz["created_at"],
+    )
+
+
+@router.get("/quizzes/{quiz_id}/attempts")
+async def list_quiz_attempts(quiz_id: UUID):
+    """List saved attempts for a quiz, most recent first."""
+    conn = db._get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, score, total, answers, completed_at
+            FROM quiz_attempts
+            WHERE quiz_id = %s
+            ORDER BY completed_at DESC
+        """, (str(quiz_id),))
+        rows = cursor.fetchall()
+        cursor.close()
+
+        attempts = []
+        for row in rows:
+            stored = row[3] if isinstance(row[3], dict) else json.loads(row[3])
+            attempts.append({
+                "attempt_id": str(row[0]),
+                "score": row[1],
+                "total": row[2],
+                "answers": stored.get("answers", stored),
+                "self_grades": stored.get("self_grades", {}),
+                "submitted_at": row[4],
+            })
+        return {"quiz_id": str(quiz_id), "attempts": attempts}
     finally:
         db._put_conn(conn)
