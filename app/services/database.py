@@ -473,6 +473,140 @@ class DatabaseService:
         finally:
             self._put_conn(conn)
 
+    # ==================== STUDY PLAN OPERATIONS ====================
+
+    def get_lecture_outline(self, lecture_id: str) -> Optional[Any]:
+        """Return the outline JSONB for a lecture, or None if not yet generated."""
+        conn = self._get_conn()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT outline FROM lecture_outlines WHERE lecture_id = %s",
+                    (lecture_id,)
+                )
+                row = cur.fetchone()
+                return row['outline'] if row else None
+        except Exception as e:
+            logger.error(f"Failed to get lecture outline: {e}")
+            raise DatabaseError(f"Failed to get lecture outline: {e}")
+        finally:
+            self._put_conn(conn)
+
+    def create_study_plan(
+        self,
+        lecture_id: str,
+        tasks: List[Dict[str, Any]],
+    ) -> str:
+        """
+        Create (or replace) the study plan for a lecture.
+
+        Replaces any existing plan via the UNIQUE(lecture_id) constraint —
+        old plan and its tasks are deleted first, then new ones inserted.
+
+        Args:
+            lecture_id: The lecture UUID string.
+            tasks: List of dicts with keys order_index, title, description.
+
+        Returns:
+            plan_id (UUID as string)
+        """
+        conn = self._get_conn()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Remove existing plan (CASCADE removes its tasks too)
+                cur.execute(
+                    "DELETE FROM study_plans WHERE lecture_id = %s",
+                    (lecture_id,)
+                )
+
+                cur.execute(
+                    "INSERT INTO study_plans (lecture_id) VALUES (%s) RETURNING id",
+                    (lecture_id,)
+                )
+                plan_id = str(cur.fetchone()['id'])
+
+                for task in tasks:
+                    cur.execute(
+                        """
+                        INSERT INTO study_tasks (plan_id, order_index, title, description)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        (plan_id, task['order_index'], task['title'], task['description'])
+                    )
+
+                conn.commit()
+                logger.info(f"Created study plan {plan_id} with {len(tasks)} tasks for lecture {lecture_id}")
+                return plan_id
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Failed to create study plan: {e}")
+            raise DatabaseError(f"Failed to create study plan: {e}")
+        finally:
+            self._put_conn(conn)
+
+    def get_study_plan(self, lecture_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Return the study plan for a lecture with all tasks, ordered by order_index.
+        Returns None if no plan exists yet.
+        """
+        conn = self._get_conn()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT id, lecture_id, generated_at FROM study_plans WHERE lecture_id = %s",
+                    (lecture_id,)
+                )
+                plan_row = cur.fetchone()
+                if not plan_row:
+                    return None
+
+                cur.execute(
+                    """
+                    SELECT id, order_index, title, description, done
+                    FROM study_tasks
+                    WHERE plan_id = %s
+                    ORDER BY order_index
+                    """,
+                    (str(plan_row['id']),)
+                )
+                tasks = [dict(row) for row in cur.fetchall()]
+
+                return {
+                    'id': plan_row['id'],
+                    'lecture_id': plan_row['lecture_id'],
+                    'generated_at': plan_row['generated_at'],
+                    'tasks': tasks,
+                }
+        except Exception as e:
+            logger.error(f"Failed to get study plan: {e}")
+            raise DatabaseError(f"Failed to get study plan: {e}")
+        finally:
+            self._put_conn(conn)
+
+    def update_study_task(self, task_id: str, done: bool) -> bool:
+        """
+        Update the done flag on a study task.
+
+        Returns:
+            True if the task was found and updated, False if not found.
+        """
+        conn = self._get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE study_tasks SET done = %s WHERE id = %s",
+                    (done, task_id)
+                )
+                updated = cur.rowcount > 0
+                conn.commit()
+                return updated
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Failed to update study task: {e}")
+            raise DatabaseError(f"Failed to update study task: {e}")
+        finally:
+            self._put_conn(conn)
+
     def close(self):
         """Close all database connections."""
         if self.pool:

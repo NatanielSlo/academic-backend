@@ -206,6 +206,46 @@ class LLMService:
             logger.error(error_msg)
             raise LLMError(error_msg)
 
+    def generate_study_plan(
+        self,
+        content: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate an ordered list of study tasks from lecture content.
+
+        Args:
+            content: Lecture outline JSON string or cleaned transcript text.
+
+        Returns:
+            List of dicts with keys: order_index (int), title (str), description (str)
+
+        Raises:
+            LLMError: If generation or JSON parsing fails.
+        """
+        prompt_template = self._load_prompt("study_plan.txt")
+        full_prompt = f"{prompt_template}\n\n--- LECTURE CONTENT ---\n{content}"
+
+        raw, finish_reason = self.complete(
+            prompt=full_prompt,
+            model="complex",
+            temperature=0.4,
+            max_tokens=4096,
+            json_mode=True,
+            return_finish_reason=True,
+        )
+
+        if finish_reason == "length":
+            logger.warning("Study plan generation was truncated — attempting to parse partial output")
+
+        try:
+            data = json.loads(raw)
+            tasks = data.get("tasks", [])
+            if not tasks:
+                raise LLMError("LLM returned empty tasks list")
+            return tasks
+        except json.JSONDecodeError as e:
+            raise LLMError(f"Study plan JSON parse error: {e}\nRaw output: {raw[:500]}")
+
     def clean_transcript(
         self,
         raw_transcript: str,

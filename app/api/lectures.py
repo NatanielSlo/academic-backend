@@ -257,6 +257,9 @@ async def create_lecture(
     """
     Create a new lecture and start processing pipeline in the background.
 
+    Any of course_name, lecture_number, date that are omitted will be
+    auto-extracted from the URL before the record is created.
+
     Processing steps:
     1. Download audio from URL
     2. Transcribe with Whisper API
@@ -268,12 +271,27 @@ async def create_lecture(
     to check processing status via GET /api/lectures/{lecture_id}/status
     """
     try:
+        # Auto-extract metadata for any fields the caller left blank
+        course_name = lecture.course_name
+        lecture_number = lecture.lecture_number
+        lecture_date = lecture.date
+
+        if not course_name or not lecture_date:
+            meta = audio_extractor.extract_metadata(lecture.url)
+            if not course_name:
+                course_name = meta.get('course_name')
+            if not lecture_number:
+                lecture_number = meta.get('lecture_number')
+            if not lecture_date:
+                lecture_date = meta.get('date')
+            logger.info(f"Auto-extracted metadata for {lecture.url}: {meta}")
+
         # Create lecture record in database
         lecture_id = db.create_lecture(
             url=lecture.url,
-            course_name=lecture.course_name,
-            lecture_number=lecture.lecture_number,
-            lecture_date=lecture.date
+            course_name=course_name,
+            lecture_number=lecture_number,
+            lecture_date=lecture_date,
         )
 
         # Start background processing
@@ -283,7 +301,10 @@ async def create_lecture(
 
         return LectureResponse(
             lecture_id=lecture_id,
-            status="processing"
+            status="processing",
+            course_name=course_name,
+            lecture_number=lecture_number,
+            date=lecture_date,
         )
 
     except DatabaseError as e:

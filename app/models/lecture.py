@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date as DateType, datetime
 from typing import Optional
 from pydantic import BaseModel, HttpUrl, Field
 from uuid import UUID, uuid4
@@ -9,13 +9,16 @@ class LectureCreate(BaseModel):
     url: str
     course_name: Optional[str] = None
     lecture_number: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[DateType] = None
 
 
 class LectureResponse(BaseModel):
     """Response model after lecture creation."""
     lecture_id: UUID
     status: str
+    course_name: Optional[str] = None
+    lecture_number: Optional[str] = None
+    date: Optional[DateType] = None
 
 
 class LectureStatus(BaseModel):
@@ -32,7 +35,7 @@ class LectureListItem(BaseModel):
     url: str
     course_name: Optional[str]
     lecture_number: Optional[str]
-    date: Optional[date]
+    date: Optional[DateType]
     status: str
     created_at: datetime
 

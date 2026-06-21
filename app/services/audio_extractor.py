@@ -1,10 +1,12 @@
+import json
 import os
 import re
 import time
 import subprocess
 import signal
+from datetime import date as DateType
 from pathlib import Path
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 from urllib.parse import urlparse
 import logging
 
@@ -46,6 +48,113 @@ class AudioExtractor:
         except Exception as e:
             logger.error(f"Error parsing URL {url}: {e}")
             return False
+
+    def extract_metadata(self, url: str) -> dict[str, Any]:
+        """
+        Fetch lecture metadata without downloading any media.
+
+        Scrapes the TUM Live page for course_name (full name + module code,
+        e.g. "Einführung in die Informatik (IN0001)"), then uses yt-dlp for
+        upload_date and lecture_number.
+
+        Returns a dict containing any subset of:
+          course_name, lecture_number, date (datetime.date)
+        Only keys that were successfully extracted are present.
+        """
+        metadata: dict[str, Any] = {}
+
+        # --- 1. Scrape page for course name ---
+        try:
+            import httpx
+            resp = httpx.get(url, timeout=10, follow_redirects=True,
+                             headers={"User-Agent": "Mozilla/5.0"})
+            html = resp.text
+
+            # TUM Live embeds course info in og:title or <title>.
+            # Typical formats:
+            #   og:title  → "Einführung in die Informatik (IN0001)"
+            #   <title>   → "Stream title | Einführung in die Informatik (IN0001) | TUM-live"
+            course_name = None
+
+            # Try og:title (property= or name= ordering varies)
+            for pattern in [
+                r'<meta\s[^>]*property=["\']og:title["\']\s[^>]*content=["\']([^"\']+)["\']',
+                r'<meta\s[^>]*content=["\']([^"\']+)["\']\s[^>]*property=["\']og:title["\']',
+            ]:
+                m = re.search(pattern, html, re.IGNORECASE)
+                if m:
+                    course_name = m.group(1).strip()
+                    break
+
+            # Fallback: parse <title> and take the segment that looks like a course name
+            # (contains a module code like IN0001, MA0001, etc., or is the longest segment)
+            if not course_name:
+                m = re.search(r'<title>([^<]+)</title>', html, re.IGNORECASE)
+                if m:
+                    raw = m.group(1)
+                    # Split on common separators and pick the segment with a module code
+                    segments = [s.strip() for s in re.split(r'[|\-–]', raw) if s.strip()]
+                    # Prefer segment that contains a TUM module code pattern (e.g. IN0001)
+                    code_seg = next(
+                        (s for s in segments if re.search(r'\b[A-Z]{2,4}\d{4}\b', s)),
+                        None
+                    )
+                    course_name = code_seg or (segments[0] if segments else None)
+                    # Strip trailing " | TUM-live" leftovers
+                    if course_name:
+                        course_name = re.sub(
+                            r'\s*[|\-–]\s*TUM.*$', '', course_name, flags=re.IGNORECASE
+                        ).strip() or None
+
+            if course_name:
+                metadata['course_name'] = course_name
+        except Exception as e:
+            logger.warning(f"Page scraping failed for {url}: {e}")
+
+        # Fallback course name from URL slug: /w/{slug}/{id}
+        if 'course_name' not in metadata:
+            try:
+                parts = [p for p in urlparse(url).path.split('/') if p]
+                if len(parts) >= 2 and parts[0] == 'w':
+                    metadata['course_name'] = parts[1].upper().replace('-', ' ')
+            except Exception:
+                pass
+
+        # --- 2. yt-dlp for upload_date and lecture_number from stream title ---
+        try:
+            result = subprocess.run(
+                ["python", "-m", "yt_dlp",
+                 "--dump-json", "--no-download", "--no-playlist", "--quiet", url],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                data = json.loads(result.stdout.strip())
+
+                title = (data.get('title') or '').strip()
+                if title:
+                    m = re.search(
+                        r'(?:lecture|vorlesung|vl|lec)[.\s#_-]*(\d+)',
+                        title, re.IGNORECASE
+                    )
+                    if m:
+                        metadata['lecture_number'] = m.group(1)
+
+                upload_date = data.get('upload_date', '')  # 'YYYYMMDD'
+                if len(upload_date) == 8:
+                    try:
+                        metadata['date'] = DateType(
+                            int(upload_date[:4]),
+                            int(upload_date[4:6]),
+                            int(upload_date[6:8]),
+                        )
+                    except ValueError:
+                        pass
+        except subprocess.TimeoutExpired:
+            logger.warning(f"yt-dlp metadata fetch timed out for {url}")
+        except Exception as e:
+            logger.warning(f"yt-dlp metadata extraction failed for {url}: {e}")
+
+        return metadata
 
     def extract_audio(
         self,

@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import lectures, chat, content
+from app.api import study_plan
 
 # Configure logging
 logging.basicConfig(
@@ -31,6 +32,7 @@ app.add_middleware(
 app.include_router(lectures.router)
 app.include_router(chat.router)
 app.include_router(content.router)
+app.include_router(study_plan.router)
 
 
 @app.get("/")
